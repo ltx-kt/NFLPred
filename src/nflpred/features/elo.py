@@ -38,6 +38,7 @@ from nflpred.config import (
     ELO_MOV,
     ELO_SEASON_REGRESSION,
     FIRST_SEASON,
+    GAME_KEYS,
 )
 
 #: 538's damping constant. The multiplier is ``ln(margin + 1)`` scaled by
@@ -49,11 +50,7 @@ _MOV_DAMPING: Final[float] = 2.2
 #: Columns the pass reads. Kept explicit so a schedule change fails here rather
 #: than producing quietly wrong ratings.
 _NEEDED: Final[tuple[str, ...]] = (
-    "game_id",
-    "season",
-    "week",
-    "game_type",
-    "gameday",
+    *GAME_KEYS,
     "home_team",
     "away_team",
     "home_score",
@@ -94,10 +91,6 @@ def _run(
     k: float = ELO_K,
     hfa: float = ELO_HFA,
     mov: bool = ELO_MOV,
-    init: float = ELO_INIT,
-    expansion_init: float = ELO_EXPANSION_INIT,
-    regression: float = ELO_SEASON_REGRESSION,
-    first_season: int = FIRST_SEASON,
 ) -> Iterator[dict[str, Any]]:
     """Walk every game in kickoff order, yielding one record per game.
 
@@ -109,7 +102,14 @@ def _run(
     Games with no score — future fixtures — still yield a record with pre-game
     ratings and simply do not trigger an update. That is what lets the live 2026
     path read an Elo feature off an unplayed game.
+
+    ``k``, ``hfa`` and ``mov`` are the tuner's knobs (`scripts/tune_elo.py`);
+    the initial rating, the expansion start, the season regression and the first
+    season are fixed in :mod:`nflpred.config` and read straight from there.
     """
+    init, expansion_init = ELO_INIT, ELO_EXPANSION_INIT
+    regression, first_season = ELO_SEASON_REGRESSION, FIRST_SEASON
+
     frame = schedules.select(_NEEDED)
     if frame.schema["gameday"] != pl.Date:
         frame = frame.with_columns(pl.col("gameday").str.to_date(strict=False))
@@ -187,7 +187,13 @@ def _run(
         yield record
 
 
-def build_elo(schedules: pl.DataFrame, **kwargs: float | bool) -> pl.DataFrame:
+def build_elo(
+    schedules: pl.DataFrame,
+    *,
+    k: float = ELO_K,
+    hfa: float = ELO_HFA,
+    mov: bool = ELO_MOV,
+) -> pl.DataFrame:
     """One row per ``(game_id, team)`` carrying pre-game ratings only.
 
     Mirrors the shape of :func:`nflpred.features.rolling.build_rolling` so
@@ -197,39 +203,38 @@ def build_elo(schedules: pl.DataFrame, **kwargs: float | bool) -> pl.DataFrame:
     Elo-only estimator the spec asks for as a sixth base model.
     """
     games = pl.DataFrame(
-        list(_run(schedules, **kwargs)),
+        list(_run(schedules, k=k, hfa=hfa, mov=mov)),
         schema_overrides={"gameday": pl.Date, "week": pl.Int64},
     ).drop("home_elo_post", "away_elo_post")
 
-    shared = ("game_id", "season", "week", "game_type", "gameday", "is_neutral_site")
+    keys = (*GAME_KEYS, "is_neutral_site")
 
-    home = games.select(
-        *shared,
-        team=pl.col("home_team"),
-        opponent=pl.col("away_team"),
-        is_home=pl.lit(1, dtype=pl.Int8),
-        elo_pre=pl.col("home_elo_pre"),
-        elo_opp_pre=pl.col("away_elo_pre"),
-        elo_prob=pl.col("home_elo_prob"),
-    )
-    away = games.select(
-        *shared,
-        team=pl.col("away_team"),
-        opponent=pl.col("home_team"),
-        is_home=pl.lit(0, dtype=pl.Int8),
-        elo_pre=pl.col("away_elo_pre"),
-        elo_opp_pre=pl.col("home_elo_pre"),
-        elo_prob=1.0 - pl.col("home_elo_prob"),
-    )
+    def side(team: str, other: str) -> pl.DataFrame:
+        home_prob = pl.col("home_elo_prob")
+        return games.select(
+            *keys,
+            team=pl.col(f"{team}_team"),
+            opponent=pl.col(f"{other}_team"),
+            is_home=pl.lit(1 if team == "home" else 0, dtype=pl.Int8),
+            elo_pre=pl.col(f"{team}_elo_pre"),
+            elo_opp_pre=pl.col(f"{other}_elo_pre"),
+            elo_prob=home_prob if team == "home" else 1.0 - home_prob,
+        )
 
     return (
-        pl.concat([home, away])
+        pl.concat([side("home", "away"), side("away", "home")])
         .with_columns(elo_diff=pl.col("elo_pre") - pl.col("elo_opp_pre"))
         .sort("gameday", "game_id", "team")
     )
 
 
-def season_end_ratings(schedules: pl.DataFrame, **kwargs: float | bool) -> pl.DataFrame:
+def season_end_ratings(
+    schedules: pl.DataFrame,
+    *,
+    k: float = ELO_K,
+    hfa: float = ELO_HFA,
+    mov: bool = ELO_MOV,
+) -> pl.DataFrame:
     """Each team's rating after its last game of each season.
 
     Diagnostic only — post-game ratings are not features and this frame is never
@@ -238,7 +243,7 @@ def season_end_ratings(schedules: pl.DataFrame, **kwargs: float | bool) -> pl.Da
     only visible through its predictions.
     """
     rows: list[dict[str, Any]] = []
-    for record in _run(schedules, **kwargs):
+    for record in _run(schedules, k=k, hfa=hfa, mov=mov):
         for side in ("home", "away"):
             rows.append(
                 {

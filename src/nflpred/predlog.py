@@ -43,7 +43,6 @@ predictions from one model.
 from __future__ import annotations
 
 import json
-import platform
 import sqlite3
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
@@ -54,6 +53,7 @@ from typing import Any
 import numpy as np
 import polars as pl
 
+from nflpred._provenance import library_versions as library_versions
 from nflpred.config import PREDICTIONS_DB
 
 #: Length of the configuration hash in ``model_version``. Six hex characters is
@@ -138,25 +138,6 @@ def connect(path: Path = PREDICTIONS_DB) -> sqlite3.Connection:
 # ------------------------------------------------------------- identity
 
 
-def library_versions() -> dict[str, str]:
-    """Library versions that can move a prediction.
-
-    The same set `nflpred.modeling.store` records, for the same reason and with the
-    same caveat: recorded, not enforced. A mismatch is context for a number that
-    moved, not a failure on its own.
-    """
-    import catboost
-    import lightgbm
-    import sklearn
-    import xgboost
-
-    return {
-        "python": platform.python_version(),
-        "scikit-learn": sklearn.__version__,
-        "xgboost": xgboost.__version__,
-        "lightgbm": lightgbm.__version__,
-        "catboost": catboost.__version__,
-    }
 
 
 def config_suffix(

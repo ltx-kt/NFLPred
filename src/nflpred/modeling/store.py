@@ -22,7 +22,6 @@ environment that wrote them.
 from __future__ import annotations
 
 import json
-import platform
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
 from hashlib import sha256
@@ -32,9 +31,9 @@ from typing import Any, Final
 import joblib
 import numpy as np
 import polars as pl
-import sklearn
 from sklearn.calibration import CalibratedClassifierCV
 
+from nflpred._provenance import library_versions
 from nflpred.config import MODELS_DIR
 from nflpred.modeling.base import home_win_probability, split_frame
 
@@ -72,20 +71,6 @@ def _matrix_hash(path: Path) -> str:
     return sha256(path.read_bytes()).hexdigest()[:16]
 
 
-def _versions() -> dict[str, str]:
-    """Library versions that can move a prediction. Recorded, not enforced —
-    a mismatch is context for a failed fingerprint, not a failure by itself."""
-    import catboost
-    import lightgbm
-    import xgboost
-
-    return {
-        "python": platform.python_version(),
-        "scikit-learn": sklearn.__version__,
-        "xgboost": xgboost.__version__,
-        "lightgbm": lightgbm.__version__,
-        "catboost": catboost.__version__,
-    }
 
 
 def save_models(
@@ -122,7 +107,7 @@ def save_models(
         "splits": {
             name: split_frame(matrix, name).height for name in ("train", "calib", "val")
         },
-        "versions": _versions(),
+        "versions": library_versions(),
         "fingerprint": {
             name: fingerprint(model, matrix, features) for name, model in models.items()
         },

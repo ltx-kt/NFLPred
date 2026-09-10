@@ -93,12 +93,18 @@ def _is_immutable(season: int | None) -> bool:
     return season is not None and season < LIVE_SEASON
 
 
-def _is_cached(path: Path, columns: Sequence[str], season: int | None) -> bool:
-    """Decide whether the on-disk file can be served without re-fetching."""
+def _is_cached(
+    path: Path, columns: Sequence[str], season: int | None, manifest: dict[str, Any]
+) -> bool:
+    """Decide whether the on-disk file can be served without re-fetching.
+
+    ``manifest`` is passed in - every caller already holds it, and re-reading
+    ``manifest.json`` once per season was ~80 JSON parses per ingest run.
+    """
     if not path.exists():
         return False
 
-    entry = load_manifest().get(_key(path))
+    entry = manifest.get(_key(path))
     if entry is None:
         return False
 
@@ -203,7 +209,7 @@ def ingest_pbp(seasons: Iterable[int], *, force: bool = False) -> None:
 
     for season in seasons:
         path = pbp_path(season)
-        if not force and _is_cached(path, PBP_COLUMNS, season):
+        if not force and _is_cached(path, PBP_COLUMNS, season, manifest):
             print(f"  pbp {season}: cached")
             continue
 
@@ -245,7 +251,7 @@ def ingest_team_stats(seasons: Iterable[int], *, force: bool = False) -> None:
 
     for season in seasons:
         path = team_stats_path(season)
-        if not force and _is_cached(path, ("*",), season):
+        if not force and _is_cached(path, ("*",), season, manifest):
             print(f"  team_stats {season}: cached")
             continue
 
@@ -278,7 +284,7 @@ def ingest_schedules(*, force: bool = False) -> None:
     """
     manifest = load_manifest()
 
-    if not force and _is_cached(SCHEDULES_PATH, SCHEDULE_COLUMNS, None):
+    if not force and _is_cached(SCHEDULES_PATH, SCHEDULE_COLUMNS, None, manifest):
         print("  schedules: cached")
         return
 

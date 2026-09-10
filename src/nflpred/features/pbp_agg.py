@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import polars as pl
 
-from nflpred.config import EXPLOSIVE_YARDS, POSTSEASON_TYPES
+from nflpred.config import EXPLOSIVE_YARDS, GAME_KEYS, POSTSEASON_TYPES
 
 #: Plays counted toward offensive rate statistics, before any win-probability
 #: filter.
@@ -190,28 +190,18 @@ def _spine(schedules: pl.DataFrame) -> pl.DataFrame:
         pl.col("home_score").is_not_null() & pl.col("away_score").is_not_null()
     )
 
-    shared = ("game_id", "season", "week", "game_type", "gameday")
+    def side(team: str, other: str) -> pl.DataFrame:
+        return played.select(
+            *GAME_KEYS,
+            team=pl.col(f"{team}_team"),
+            opponent=pl.col(f"{other}_team"),
+            is_home=pl.lit(1 if team == "home" else 0, dtype=pl.Int8),
+            points_for=pl.col(f"{team}_score").cast(pl.Int32),
+            points_against=pl.col(f"{other}_score").cast(pl.Int32),
+            location=pl.col("location"),
+        )
 
-    home = played.select(
-        *shared,
-        team=pl.col("home_team"),
-        opponent=pl.col("away_team"),
-        is_home=pl.lit(1, dtype=pl.Int8),
-        points_for=pl.col("home_score").cast(pl.Int32),
-        points_against=pl.col("away_score").cast(pl.Int32),
-        location=pl.col("location"),
-    )
-    away = played.select(
-        *shared,
-        team=pl.col("away_team"),
-        opponent=pl.col("home_team"),
-        is_home=pl.lit(0, dtype=pl.Int8),
-        points_for=pl.col("away_score").cast(pl.Int32),
-        points_against=pl.col("home_score").cast(pl.Int32),
-        location=pl.col("location"),
-    )
-
-    return pl.concat([home, away]).with_columns(
+    return pl.concat([side("home", "away"), side("away", "home")]).with_columns(
         # `is_home` stays nominal even at neutral sites — the Super Bowl still
         # has a designated home team for line purposes. Whether the home-field
         # feature should be zeroed there is a Phase 3 call, so both facts are

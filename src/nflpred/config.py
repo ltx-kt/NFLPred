@@ -190,6 +190,17 @@ SCHEDULE_COLUMNS: Final[tuple[str, ...]] = (
 
 # ----------------------------------------------------------------- constants
 
+#: The columns that identify and time-order a game, carried through every
+#: per-(game, team) frame so the feature layer can join and sort on them.
+#: `pbp_agg._spine` and `elo.build_elo` both start their row set from these.
+GAME_KEYS: Final[tuple[str, ...]] = (
+    "game_id",
+    "season",
+    "week",
+    "game_type",
+    "gameday",
+)
+
 #: A play gaining this many yards or more counts as explosive (Tier 2 feature).
 EXPLOSIVE_YARDS: Final[int] = 20
 
