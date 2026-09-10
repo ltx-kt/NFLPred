@@ -1,0 +1,84 @@
+[project]
+name = "nflpred"
+version = "0.1.0"
+description = "Calibrated ensemble for NFL straight-up winner prediction, with per-game SHAP explanations."
+requires-python = ">=3.13"
+
+# Polars is the workhorse for the data layer; numpy/pandas exist only at the
+# sklearn boundary. The three gradient boosters and `shap` are not here - they
+# live in the `train` group below, because fitting or explaining a model needs
+# them but serving the read-only API does not.
+dependencies = [
+    "nflreadpy",
+    "polars",
+    "pyarrow",
+    "scikit-learn",
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "joblib",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "ruff",
+    "httpx",  # FastAPI TestClient transport, used by tests/test_api.py
+]
+
+# The read-only HTTP layer over the prediction log (`nflpred.api`). Kept out of
+# the core dependencies so a data or model run never has to install a web stack;
+# `uv run --group api ...` pulls it in only when serving.
+api = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+]
+
+# The gradient-boosted ensemble members and the SHAP explainer. Every run under
+# scripts/phases/ and scripts/tuning/ needs these, and so does the test suite
+# (`nflpred.modeling.base` imports the three boosters at module scope). The
+# Docker serving image does not: it installs `--no-default-groups --group api`
+# and never imports `nflpred.modeling`. `shap` also drags in numba, so keeping
+# it grouped means an API-only environment never compiles it.
+train = [
+    "xgboost",
+    "lightgbm",
+    "catboost",
+    "shap>=0.52.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nflpred"]
+
+[tool.uv]
+# `train` is a default group so the ordinary developer commands - `uv run
+# pytest`, `uv run python scripts/phases/phase4_models.py` - work with no flag.
+# Only the Docker API build opts out, with `--no-default-groups --group api`.
+default-groups = ["dev", "train"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ANN"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ANN"]
+"scripts/**" = ["ANN"]
+
+[tool.ruff.lint.isort]
+# `scripts/phases/_shared.py` is a sibling module the phase scripts import by
+# bare name (they run with scripts/phases/ on sys.path); group it after the
+# first-party `nflpred` imports rather than mixed in with third-party.
+known-local-folder = ["_shared"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "data: needs the built parquet under data/processed; auto-skipped when absent (see tests/conftest.py). Run only the rest with `-m 'not data'`.",
+]

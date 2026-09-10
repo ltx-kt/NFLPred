@@ -1,0 +1,20 @@
+# Everything the image does not need. The API serves only src/ and
+# data/predictions.sqlite; the frontend is built from frontend/ inside the image.
+.venv
+.git
+.ruff_cache
+.pytest_cache
+__pycache__
+*.pyc
+
+# Raw and processed data - the API never touches the parquet tree.
+data/raw
+data/processed
+artifacts
+scripts
+tests
+docs
+
+# Frontend build artifacts and deps (rebuilt in the frontend stage)
+frontend/node_modules
+frontend/dist

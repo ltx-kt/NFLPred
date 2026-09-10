@@ -1,0 +1,36 @@
+.venv/
+__pycache__/
+*.py[cod]
+
+# Cached pulls and derived matrices are reproducible from `python -m nflpred.ingest`.
+data/
+
+# Generated outputs, never inputs: fitted models (D-17) and the phase-script
+# reliability PNGs. Every phase script refits from scratch; nothing here is read
+# back as a cache.
+artifacts/
+
+.pytest_cache/
+.ruff_cache/
+
+# Design docs, the evaluation write-up, and the decision log are kept local.
+docs/
+
+# Agent instructions, not part of the published project.
+CLAUDE.md
+.claude/
+
+# Never committed, even though nothing in this project reads env vars today.
+.env
+.env.*
+
+# Editor and OS cruft
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Python packaging / typing caches not currently present but cheap to pre-empt
+*.egg-info/
+.mypy_cache/
+.ipynb_checkpoints/
