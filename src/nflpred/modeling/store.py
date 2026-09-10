@@ -71,8 +71,6 @@ def _matrix_hash(path: Path) -> str:
     return sha256(path.read_bytes()).hexdigest()[:16]
 
 
-
-
 def save_models(
     models: Mapping[str, CalibratedClassifierCV],
     key: str,

@@ -138,8 +138,6 @@ def connect(path: Path = PREDICTIONS_DB) -> sqlite3.Connection:
 # ------------------------------------------------------------- identity
 
 
-
-
 def config_suffix(
     train_seasons: tuple[int, int],
     calib_seasons: tuple[int, int],

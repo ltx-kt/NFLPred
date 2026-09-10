@@ -335,3 +335,13 @@ def test_tripwire_with_entries_still_passes_a_genuinely_sub_ceiling_model():
 
     entries = [_entry("fine", 0.71996)]  # also rounds to 0.7200 for display
     halt_if_suspicious(metrics_table(entries), entries=entries)
+
+
+def test_tripwire_flags_a_leak_in_one_of_two_rows_sharing_a_name():
+    """Phase 4 scores each estimator on two feature sets, so `entries` holds two
+    rows named e.g. 'logreg'. A leak in either must still halt."""
+    from nflpred.evaluate import metrics_table
+
+    entries = [_entry("logreg", 0.80), _entry("logreg", 0.63), _entry("xgboost", 0.64)]
+    with pytest.raises(SystemExit, match="logreg"):
+        halt_if_suspicious(metrics_table(entries), entries=entries)

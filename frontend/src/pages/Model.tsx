@@ -14,10 +14,11 @@ export function Model() {
   const members = useMembers(4);
   const index = useIndex();
 
+  // `perf` gates the page; `calib` and `members` fail into their own chart
+  // frames so a partial outage still shows the stats and the accuracy trend.
   if (perf.isLoading || calib.isLoading || members.isLoading)
     return <Spinner label="Loading diagnostics" />;
-  const failed = perf.error ?? calib.error ?? members.error;
-  if (failed) return <ErrorNote error={failed} />;
+  if (perf.error) return <ErrorNote error={perf.error} />;
   if (!perf.data) return null;
 
   const { ens, elo, mkt } = byModel(perf.data.overall);
@@ -58,7 +59,9 @@ export function Model() {
         title="Calibration - ensemble"
         caption="A point on the dashed line means that when the model said X%, it happened X% of the time. Above the line = under-confident in that bin, below = over-confident."
       >
-        {calib.data && calib.data.points.length > 0 ? (
+        {calib.error ? (
+          <ErrorNote error={calib.error} />
+        ) : calib.data && calib.data.points.length > 0 ? (
           <CalibrationChart points={calib.data.points} />
         ) : (
           <p className="py-8 text-sm text-ink-muted">Not enough settled games to bin.</p>
@@ -83,7 +86,9 @@ export function Model() {
           "Each ensemble member scored on its own probability. Monitoring only - never fed back into the weights."
         }
       >
-        {members.data && members.data.overall.length > 0 ? (
+        {members.error ? (
+          <ErrorNote error={members.error} />
+        ) : members.data && members.data.overall.length > 0 ? (
           <MemberBrierChart rows={members.data.overall} />
         ) : (
           <p className="py-8 text-sm text-ink-muted">

@@ -130,16 +130,11 @@ def metrics_table(entries: Sequence[tuple[str, np.ndarray, np.ndarray]]) -> pl.D
     )
 
 
-def _exact_accuracy(
-    entries: Sequence[tuple[str, np.ndarray, np.ndarray]],
-) -> dict[str, float]:
-    """Per-model accuracy, unrounded, with the same null-drop as `metrics_table`."""
-    out: dict[str, float] = {}
-    for name, y_true, y_prob in entries:
-        p_arr = np.asarray(y_prob, dtype=float)
-        keep = ~np.isnan(p_arr)
-        out[name] = accuracy(np.asarray(y_true, dtype=float)[keep], p_arr[keep])
-    return out
+def _entry_accuracy(y_true: np.ndarray, y_prob: np.ndarray) -> float:
+    """One entry's unrounded accuracy, with the same null-drop as `metrics_table`."""
+    p_arr = np.asarray(y_prob, dtype=float)
+    keep = ~np.isnan(p_arr)
+    return accuracy(np.asarray(y_true, dtype=float)[keep], p_arr[keep])
 
 
 def halt_if_suspicious(
@@ -163,15 +158,19 @@ def halt_if_suspicious(
     through - the tripwire rounding in the leak's favour. Without ``entries`` the
     check falls back to the rounded ``table["accuracy"]`` column, which is enough
     for a hand-built table in a test.
+
+    ``entries`` may hold two rows under one name (phase 4 scores each estimator
+    on two feature sets), so a leaking model is matched by *any* of its entries
+    and every table row under that name is flagged - over-reporting in the
+    halt-and-investigate direction, never missing a leak.
     """
     if entries is not None:
-        exact = _exact_accuracy(entries)
-        over = [
+        leaking = {
             name
-            for name in table["model"].to_list()
-            if name not in exempt and exact.get(name, 0.0) > ceiling
-        ]
-        suspicious = table.filter(pl.col("model").is_in(over))
+            for name, y_true, y_prob in entries
+            if name not in exempt and _entry_accuracy(y_true, y_prob) > ceiling
+        }
+        suspicious = table.filter(pl.col("model").is_in(list(leaking)))
     else:
         suspicious = table.filter(
             (pl.col("accuracy") > ceiling) & ~pl.col("model").is_in(list(exempt))
@@ -179,7 +178,7 @@ def halt_if_suspicious(
     if not suspicious.height:
         return
 
-    names = ", ".join(suspicious["model"].to_list())
+    names = ", ".join(dict.fromkeys(suspicious["model"].to_list()))
     msg = (
         f"Halted: {names} scored above {ceiling:.0%} accuracy on a time-ordered "
         f"split. Vegas hits 66-68%. This is a leak, not a result - investigate "

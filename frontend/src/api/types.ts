@@ -3,15 +3,7 @@
 
 export type WeekKind = "live" | "backtest";
 
-export interface Health {
-  runs: number;
-  predictions: number;
-  member_predictions: number;
-  outcomes: number;
-  settled: number;
-  settled_share: number;
-  model_versions: string[];
-}
+// /health (schemas.Health) has no frontend consumer - it is a liveness probe.
 
 export interface WeekRef {
   season: number;
