@@ -24,14 +24,10 @@ frame would not exercise the splits, the ties or the 17-column layout.
 
 from __future__ import annotations
 
-import ast
-from pathlib import Path
-
 import numpy as np
 import polars as pl
 import pytest
 
-from nflpred.config import FEATURE_MATRIX_GT_PATH
 from nflpred.features.build import CORE_FEATURES, to_training_arrays
 from nflpred.modeling.base import (
     elo_probability,
@@ -61,27 +57,7 @@ from nflpred.modeling.ensemble import (
 )
 from nflpred.modeling.store import load_models, save_models
 
-PHASE5_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "phases" / "phase5_ensemble.py"
-
-
-@pytest.fixture(scope="module")
-def matrix() -> pl.DataFrame:
-    if not FEATURE_MATRIX_GT_PATH.exists():
-        pytest.skip(
-            "game_features_gt.parquet not built; "
-            "run python -m nflpred.features.build --garbage-time"
-        )
-    return pl.read_parquet(FEATURE_MATRIX_GT_PATH)
-
-
-@pytest.fixture(scope="module")
-def splits(matrix: pl.DataFrame) -> tuple[pl.DataFrame, pl.DataFrame, pl.DataFrame]:
-    return tuple(split_frame(matrix, name) for name in ("train", "calib", "val"))
-
-
-@pytest.fixture(scope="module")
-def models(matrix: pl.DataFrame) -> dict:
-    return fit_all(matrix, CORE_FEATURES)
+# `matrix`, `splits` and `models` come from conftest.py (session-scoped).
 
 
 @pytest.fixture(scope="module")
@@ -246,24 +222,8 @@ def test_oof_stack_drops_only_the_earliest_block(matrix, splits):
 # ------------------------------------------------------------ split hygiene
 
 
-def test_phase5_script_never_names_the_unseen_split():
-    """Static half: the checkpoint script cannot ask for held-out rows by name."""
-    tree = ast.parse(PHASE5_SCRIPT.read_text(encoding="utf-8"))
-
-    constants = {
-        node.value
-        for node in ast.walk(tree)
-        if isinstance(node, ast.Constant) and isinstance(node.value, str)
-    }
-    assert "test" not in constants
-
-    imported = {
-        alias.name
-        for node in ast.walk(tree)
-        if isinstance(node, ast.ImportFrom)
-        for alias in node.names
-    }
-    assert "TEST_SEASONS" not in imported
+# The static "script never names the unseen split" check for every phase lives
+# in test_phase_hygiene.py now. This is its runtime half for Phase 5.
 
 
 def test_ensembles_ignore_the_held_out_split(matrix, splits):

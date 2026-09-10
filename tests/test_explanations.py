@@ -28,9 +28,6 @@ shape differences that :func:`~nflpred.explain._normalise` exists to absorb.
 
 from __future__ import annotations
 
-import ast
-from pathlib import Path
-
 import numpy as np
 import polars as pl
 import pytest
@@ -69,10 +66,6 @@ from nflpred.modeling.ensemble import (
     prefit_stack,
 )
 
-PHASE6_SCRIPT = (
-    Path(__file__).resolve().parents[1] / "scripts" / "phases" / "phase6_explanations.py"
-)
-
 #: The ensemble total reconciles at the float round-trip through sigmoid and
 #: back — measured at 1.4e-07 across all 821 validation games — not at machine
 #: epsilon. Asserting 1e-9 here would be asserting something untrue about
@@ -81,10 +74,9 @@ ENSEMBLE_ATOL = 1e-6
 
 
 @pytest.fixture(scope="module")
-def fitted(matrix: pl.DataFrame, splits) -> dict:
+def fitted(models: dict, splits) -> dict:
     """Stack A and its raw members — the headline, and the objects to explain."""
     train, calib, _ = splits
-    models = fit_all(matrix, CORE_FEATURES)
     raw = {name: inner_estimator(model) for name, model in models.items()}
     stack = prefit_stack(build_members(raw), calib)
     coefficients, intercept = meta_terms(stack)
@@ -465,25 +457,9 @@ def test_a_tie_gets_one_explanation_not_two(splits, explained):
 
 
 # ------------------------------------------------------------ split hygiene
-
-def test_phase6_script_never_names_the_unseen_split():
-    """Static half, unchanged from the Phase 4/5 pattern."""
-    tree = ast.parse(PHASE6_SCRIPT.read_text(encoding="utf-8"))
-
-    constants = {
-        node.value
-        for node in ast.walk(tree)
-        if isinstance(node, ast.Constant) and isinstance(node.value, str)
-    }
-    assert "test" not in constants
-
-    imported = {
-        alias.name
-        for node in ast.walk(tree)
-        if isinstance(node, ast.ImportFrom)
-        for alias in node.names
-    }
-    assert "TEST_SEASONS" not in imported
+#
+# The static "script never names the unseen split" check for every phase lives
+# in test_phase_hygiene.py now. This is its runtime half for Phase 6.
 
 
 def test_explanations_ignore_the_held_out_split(matrix, splits):

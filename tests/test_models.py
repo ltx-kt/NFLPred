@@ -19,10 +19,8 @@ splits, the ties, or the null columns that make this layer interesting.
 
 from __future__ import annotations
 
-import ast
 import json
 import warnings
-from pathlib import Path
 
 import numpy as np
 import polars as pl
@@ -41,14 +39,9 @@ from nflpred.modeling.base import (
 )
 from nflpred.modeling.store import MANIFEST_NAME, fingerprint, load_models, save_models
 
-PHASE4_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "phases" / "phase4_models.py"
-
-
 pytestmark = pytest.mark.data
 
-@pytest.fixture(scope="module")
-def models(matrix: pl.DataFrame) -> dict:
-    return fit_all(matrix, CORE_FEATURES)
+# `matrix`, `splits` and `models` come from conftest.py (session-scoped).
 
 
 # --------------------------------------------------------------- D-4: ties
@@ -251,30 +244,9 @@ def _round_trip(models, matrix, tmp_path):
 
 
 # ------------------------------------------------------------ split hygiene
-
-
-def test_phase4_script_never_names_the_test_split():
-    """Static half of the claim: the checkpoint script cannot ask for test rows.
-
-    Every split is read by name. If ``"test"`` is not a string constant in the
-    module, no code path in it can select a test row.
-    """
-    tree = ast.parse(PHASE4_SCRIPT.read_text(encoding="utf-8"))
-
-    constants = {
-        node.value
-        for node in ast.walk(tree)
-        if isinstance(node, ast.Constant) and isinstance(node.value, str)
-    }
-    assert "test" not in constants
-
-    imported = {
-        alias.name
-        for node in ast.walk(tree)
-        if isinstance(node, ast.ImportFrom)
-        for alias in node.names
-    }
-    assert "TEST_SEASONS" not in imported
+#
+# The static "script never names the test split" check for every phase lives in
+# test_phase_hygiene.py now. This is its runtime half for Phase 4.
 
 
 def test_fitting_ignores_the_test_split(matrix, splits):
