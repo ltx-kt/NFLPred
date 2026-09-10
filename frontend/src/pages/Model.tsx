@@ -5,7 +5,8 @@ import { AccuracyTrendChart } from "../components/charts/AccuracyTrendChart";
 import { CalibrationChart } from "../components/charts/CalibrationChart";
 import { ChartFrame } from "../components/charts/ChartFrame";
 import { MemberBrierChart } from "../components/charts/MemberBrierChart";
-import { pct, prob3 } from "../lib/format";
+import { pct, prob3, signedPct } from "../lib/format";
+import { byModel } from "../lib/metrics";
 
 export function Model() {
   const perf = usePerformance();
@@ -15,12 +16,11 @@ export function Model() {
 
   if (perf.isLoading || calib.isLoading || members.isLoading)
     return <Spinner label="Loading diagnostics" />;
-  if (perf.error) return <ErrorNote error={perf.error} />;
+  const failed = perf.error ?? calib.error ?? members.error;
+  if (failed) return <ErrorNote error={failed} />;
   if (!perf.data) return null;
 
-  const ens = perf.data.overall.find((r) => r.model === "ensemble");
-  const mkt = perf.data.overall.find((r) => r.model === "market (de-vigged)");
-  const elo = perf.data.overall.find((r) => r.model === "elo only");
+  const { ens, elo, mkt } = byModel(perf.data.overall);
   const liveSeason = index.data?.live_season;
 
   return (
@@ -47,11 +47,7 @@ export function Model() {
           <StatTile label="brier" value={prob3(ens.brier)} sub="0.25 = always 50%" />
           <StatTile
             label="vs elo baseline"
-            value={
-              elo
-                ? `${ens.accuracy - elo.accuracy >= 0 ? "+" : ""}${pct(ens.accuracy - elo.accuracy, 1)}`
-                : "-"
-            }
+            value={elo ? signedPct(ens.accuracy - elo.accuracy) : "-"}
             sub="accuracy gain over Elo alone"
             tone={elo && ens.accuracy - elo.accuracy >= 0 ? "good" : "default"}
           />

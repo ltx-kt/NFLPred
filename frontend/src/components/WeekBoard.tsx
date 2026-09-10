@@ -29,7 +29,7 @@ export function WeekBoard({ season, week }: { season: number; week: number }) {
       </div>
 
       {ref.kind === "backtest" && (
-        <p className="mb-4 rounded-lg border border-hairline bg-surface-2 px-3 py-2 text-xs text-ink-2">
+        <p className="mb-4 card-muted text-xs text-ink-2">
           This is a replayed week from a spent test season. Each pick was made by a model
           fitted only on games played before it, but the season as a whole is not an
           independent evaluation - see the About page.

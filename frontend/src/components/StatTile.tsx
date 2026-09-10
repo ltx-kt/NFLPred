@@ -18,7 +18,7 @@ export function StatTile({
         ? "text-critical"
         : "text-ink";
   return (
-    <div className="rounded-xl border border-hairline bg-surface p-4">
+    <div className="card">
       <div className="text-[11px] uppercase tracking-wide text-ink-muted">{label}</div>
       <div className={"tnum mt-1 text-2xl font-semibold " + valueColor}>{value}</div>
       {sub && <div className="mt-0.5 text-xs text-ink-muted">{sub}</div>}

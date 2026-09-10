@@ -43,7 +43,7 @@ export function GameDetail() {
         </p>
       </header>
 
-      <section className="rounded-xl border border-hairline bg-surface p-4">
+      <section className="card">
         <ProbabilityBar
           homeWinProb={data.home_win_prob}
           homeTeam={data.home_team}
@@ -68,7 +68,7 @@ export function GameDetail() {
 
       <section>
         <h2 className="mb-2 text-sm font-semibold">Member votes</h2>
-        <div className="rounded-xl border border-hairline bg-surface p-4">
+        <div className="card">
           <MemberVotes members={data.members} homeTeam={data.home_team} />
         </div>
       </section>
@@ -77,7 +77,7 @@ export function GameDetail() {
         <>
           <section>
             <h2 className="mb-2 text-sm font-semibold">Why</h2>
-            <p className="rounded-xl border border-hairline bg-surface p-4 text-sm leading-relaxed text-ink-2">
+            <p className="card text-sm leading-relaxed text-ink-2">
               {expl.narrative}
             </p>
           </section>
@@ -134,7 +134,7 @@ function FactorList({
   sign: "for" | "against";
 }) {
   return (
-    <div className="rounded-xl border border-hairline bg-surface p-4">
+    <div className="card">
       <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">
         {title}
       </h3>

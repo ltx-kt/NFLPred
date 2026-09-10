@@ -25,7 +25,7 @@ export function GameCard({ game }: { game: GameRow }) {
   return (
     <Link
       to={`/game/${game.game_id}`}
-      className="flex flex-col gap-3 rounded-xl border border-hairline bg-surface p-4 transition-colors hover:border-series-1/40"
+      className="flex flex-col gap-3 card transition-colors hover:border-series-1/40"
     >
       <div className="flex items-center justify-between">
         <span className="text-xs text-ink-muted">{shortDate(game.gameday)}</span>

@@ -6,9 +6,9 @@ export const pct = (p: number | null | undefined, digits = 0): string =>
 export const prob3 = (p: number | null | undefined): string =>
   p == null ? "-" : p.toFixed(3);
 
-// A prediction-log probability is P(home win). Flip it to the picked side.
-export const pickProb = (homeWinProb: number, pick: string, homeTeam: string): number =>
-  pick === homeTeam ? homeWinProb : 1 - homeWinProb;
+// A signed percentage, e.g. "+1.2%" / "-0.4%" - for deltas against a baseline.
+export const signedPct = (p: number, digits = 1): string =>
+  `${p >= 0 ? "+" : ""}${pct(p, digits)}`;
 
 export const matchup = (away: string, home: string): string => `${away} @ ${home}`;
 
@@ -26,5 +26,3 @@ export const resultWord = (pickCorrect: number | null): "hit" | "miss" | "push" 
   if (pickCorrect === 0) return "miss";
   return "push";
 };
-
-export const CONFIDENCE_ORDER = ["no read", "low", "moderate", "high"] as const;

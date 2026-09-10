@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import type {
   Calibration,
   GameDetail,
-  Health,
   Index,
   Members,
   Performance,
@@ -44,13 +43,8 @@ const qs = (params: Record<string, string | number | undefined>): string => {
   return parts.length ? `?${parts.join("&")}` : "";
 };
 
-export { ApiError };
-
 export const useIndex = () =>
   useQuery({ queryKey: ["index"], queryFn: () => get<Index>("/index") });
-
-export const useHealth = () =>
-  useQuery({ queryKey: ["health"], queryFn: () => get<Health>("/health") });
 
 export const useWeek = (season: number | undefined, week: number | undefined) =>
   useQuery({

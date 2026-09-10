@@ -24,8 +24,6 @@
   --series-3: #1baf7a; /* aqua   - market */
 
   --good: #0ca30c;
-  --warning: #fab219;
-  --serious: #ec835a;
   --critical: #d03b3b;
 
   --success-text: #006300;
@@ -48,8 +46,6 @@
   --series-3: #199e70;
 
   --good: #0ca30c;
-  --warning: #fab219;
-  --serious: #ec835a;
   --critical: #d03b3b;
 
   --success-text: #0ca30c;
@@ -70,4 +66,14 @@ body {
 
 .tnum {
   font-variant-numeric: tabular-nums;
+}
+
+@layer components {
+  /* The standard bordered panel. ~10 call sites had this class string inline. */
+  .card {
+    @apply rounded-xl border border-hairline bg-surface p-4;
+  }
+  .card-muted {
+    @apply rounded-lg border border-hairline bg-surface-2 px-3 py-2;
+  }
 }

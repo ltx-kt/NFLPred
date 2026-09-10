@@ -12,20 +12,15 @@ import {
   YAxis,
 } from "recharts";
 import type { SeasonMetric } from "../../api/types";
+import { MODEL_LABEL } from "../../lib/metrics";
 import { AXIS_STROKE, AXIS_TICK, GRID_STROKE } from "./ChartFrame";
 import { ThemedTooltip } from "./Tooltip";
 
 const SERIES = [
-  { key: "ensemble", color: "var(--series-1)", label: "model" },
-  { key: "elo", color: "var(--series-2)", label: "elo only" },
-  { key: "market", color: "var(--series-3)", label: "market" },
+  { key: MODEL_LABEL.ensemble, color: "var(--series-1)", label: "model" },
+  { key: MODEL_LABEL.elo, color: "var(--series-2)", label: "elo only" },
+  { key: MODEL_LABEL.market, color: "var(--series-3)", label: "market" },
 ] as const;
-
-const NAME_IN_ROW: Record<string, string> = {
-  ensemble: "ensemble",
-  elo: "elo only",
-  market: "market (de-vigged)",
-};
 
 // Running (cumulative) straight-up accuracy through the ordered weeks, for the
 // model against its two reference lines. Cumulative rather than per-week so the
@@ -49,7 +44,7 @@ export function AccuracyTrendChart({
         x: `${String(wk.season).slice(2)}w${wk.week}`,
       };
       for (const s of SERIES) {
-        const row = wk.metrics.find((m) => m.model === NAME_IN_ROW[s.key]);
+        const row = wk.metrics.find((m) => m.model === s.key);
         if (row && row.n > 0) {
           running[s.key].correct += row.accuracy * row.n;
           running[s.key].n += row.n;

@@ -7,21 +7,16 @@ export function ChartFrame({
   title,
   caption,
   children,
-  right,
 }: {
   title: string;
   caption?: ReactNode;
   children: ReactNode;
-  right?: ReactNode;
 }) {
   return (
-    <figure className="rounded-xl border border-hairline bg-surface p-4">
-      <figcaption className="mb-3 flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold text-ink">{title}</h3>
-          {caption && <p className="mt-0.5 text-xs text-ink-muted">{caption}</p>}
-        </div>
-        {right}
+    <figure className="card">
+      <figcaption className="mb-3">
+        <h3 className="text-sm font-semibold text-ink">{title}</h3>
+        {caption && <p className="mt-0.5 text-xs text-ink-muted">{caption}</p>}
       </figcaption>
       {children}
     </figure>

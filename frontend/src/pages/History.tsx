@@ -4,7 +4,8 @@ import { useIndex, usePerformance } from "../api/client";
 import { KindBadge } from "../components/Badges";
 import { ErrorNote, Spinner } from "../components/Feedback";
 import { StatTile } from "../components/StatTile";
-import { pct, prob3 } from "../lib/format";
+import { pct, prob3, signedPct } from "../lib/format";
+import { byModel } from "../lib/metrics";
 import { WeekBoard } from "../components/WeekBoard";
 
 export function History() {
@@ -91,9 +92,7 @@ function SeasonSummary({ season }: { season: number }) {
   if (!data || data.n_settled === 0)
     return <p className="text-sm text-ink-muted">No settled games in {season} yet.</p>;
 
-  const ens = data.overall.find((r) => r.model === "ensemble");
-  const mkt = data.overall.find((r) => r.model === "market (de-vigged)");
-  const elo = data.overall.find((r) => r.model === "elo only");
+  const { ens, elo, mkt } = byModel(data.overall);
   if (!ens) return null;
 
   const edgeVsMarket = mkt ? ens.accuracy - mkt.accuracy : null;
@@ -109,11 +108,7 @@ function SeasonSummary({ season }: { season: number }) {
       <StatTile label="brier" value={prob3(ens.brier)} sub="lower is better" />
       <StatTile
         label="vs market"
-        value={
-          edgeVsMarket == null
-            ? "-"
-            : `${edgeVsMarket >= 0 ? "+" : ""}${pct(edgeVsMarket, 1)}`
-        }
+        value={edgeVsMarket == null ? "-" : signedPct(edgeVsMarket)}
         sub={
           mkt
             ? `market ${pct(mkt.accuracy, 1)}${elo ? `, elo ${pct(elo.accuracy, 1)}` : ""}`

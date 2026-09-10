@@ -1,10 +1,9 @@
 import type { MemberVote } from "../api/types";
 import { pct } from "../lib/format";
 
-const ORDER = ["logreg", "random forest", "xgboost", "lightgbm", "catboost", "elo"];
-
-// Six members, fixed order. Each row is a mini bar for its P(home win) with a
-// centre tick at 50%, so a glance shows how tightly the members agree.
+// Each row is a mini bar for a member's P(home win) with a centre tick at 50%,
+// so a glance shows how tightly the members agree. Order is whatever the API
+// returned (the log's own member order), so a new member is never dropped.
 export function MemberVotes({
   members,
   homeTeam,
@@ -12,16 +11,13 @@ export function MemberVotes({
   members: MemberVote[];
   homeTeam: string;
 }) {
-  const byName = new Map(members.map((m) => [m.member, m]));
   return (
     <div className="space-y-1.5">
-      {ORDER.map((name) => {
-        const m = byName.get(name);
-        if (!m) return null;
+      {members.map((m) => {
         const home = m.pick === homeTeam;
         return (
-          <div key={name} className="flex items-center gap-3 text-xs">
-            <span className="w-24 shrink-0 text-ink-2">{name}</span>
+          <div key={m.member} className="flex items-center gap-3 text-xs">
+            <span className="w-24 shrink-0 text-ink-2">{m.member}</span>
             <div className="relative h-3 flex-1 overflow-hidden rounded bg-surface-2">
               <div
                 className="absolute inset-y-0"

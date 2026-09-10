@@ -89,11 +89,15 @@ def index(connection: sqlite3.Connection) -> dict[str, Any]:
 
 
 def _members(connection: sqlite3.Connection, game_id: str, model_version: str) -> list[dict]:
+    # `rowid` order is insertion order, and `record_predictions` writes the
+    # members in `MEMBER_ORDER` - so the board and the game page show logreg
+    # first and elo last without either end hard-coding that list.
     rows = connection.execute(
         """
         SELECT member, home_win_prob, pick
         FROM member_predictions
         WHERE game_id = ? AND model_version = ?
+        ORDER BY rowid
         """,
         (game_id, model_version),
     ).fetchall()
