@@ -20,6 +20,7 @@ from datetime import UTC, datetime
 from nflpred import predict
 from nflpred.predlog import (
     connect,
+    record_run,
     settled_predictions,
     suffix_of,
 )
@@ -82,6 +83,36 @@ def test_settled_predictions_suffix_filter_survives_unsettled_predictions(tmp_pa
         # frame is still zero-column. This filter used to crash _report.
         result = settled_predictions(connection, suffix=SUFFIX)
         assert result.is_empty()
+    finally:
+        connection.close()
+
+
+def test_record_run_refreshes_provenance_on_a_rerun(tmp_path) -> None:
+    """A second write for the same model_version must not keep stale row counts.
+
+    `config_suffix` hashes only the season bounds, half-life, features and
+    library versions - not the matrix hash or the counts - so a rerun after the
+    matrix is rebuilt reuses the version. The upsert has to carry the new
+    provenance through, the way `record_predictions` does.
+    """
+    connection = connect(tmp_path / "predictions.sqlite")
+    common = dict(
+        season=2025, week=8, league_week=500, train_seasons=(2006, 2015),
+        calib_seasons=(2016, 2018), half_life=60.0, features=["elo_prob"],
+        versions={"python": "3.13"}, meta_coefficients=None,
+    )
+    try:
+        record_run(connection, VERSION, n_train=2670, n_calib=801,
+                   matrix_sha256_16="a" * 16, **common)
+        record_run(connection, VERSION, n_train=9999, n_calib=1234,
+                   matrix_sha256_16="b" * 16, **common)
+        row = connection.execute(
+            "SELECT n_train, n_calib, matrix_sha256_16 FROM runs WHERE model_version = ?",
+            (VERSION,),
+        ).fetchone()
+        assert (row["n_train"], row["n_calib"], row["matrix_sha256_16"]) == (
+            9999, 1234, "b" * 16
+        )
     finally:
         connection.close()
 

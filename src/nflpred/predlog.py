@@ -239,7 +239,20 @@ def record_run(
             half_life, features, matrix_sha256_16, versions, meta_coefficients
         ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         ON CONFLICT (model_version) DO UPDATE SET
-            generated_at = excluded.generated_at,
+            generated_at     = excluded.generated_at,
+            season           = excluded.season,
+            week             = excluded.week,
+            league_week      = excluded.league_week,
+            train_first      = excluded.train_first,
+            train_last       = excluded.train_last,
+            n_train          = excluded.n_train,
+            calib_first      = excluded.calib_first,
+            calib_last       = excluded.calib_last,
+            n_calib          = excluded.n_calib,
+            half_life        = excluded.half_life,
+            features         = excluded.features,
+            matrix_sha256_16 = excluded.matrix_sha256_16,
+            versions         = excluded.versions,
             meta_coefficients = excluded.meta_coefficients
         """,
         (

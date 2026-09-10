@@ -227,6 +227,19 @@ def test_corrupted_fingerprint_raises(models, matrix, tmp_path):
         load_models("phase4", matrix, root=tmp_path)
 
 
+def test_load_against_a_val_less_matrix_raises_not_passes_vacuously(models, matrix, tmp_path):
+    """A matrix with no `val` rows yields an empty fingerprint.
+
+    `np.allclose([], [])` is True, so without a length guard `load_models` would
+    silently accept any model against such a matrix.
+    """
+    save_models(models, "phase4", matrix, CORE_FEATURES, root=tmp_path)
+    no_val = matrix.filter(pl.col("split") != "val")
+
+    with pytest.raises(ValueError, match="'val' rows, fewer than"):
+        load_models("phase4", no_val, root=tmp_path)
+
+
 def test_missing_manifest_raises(matrix, tmp_path):
     with pytest.raises(FileNotFoundError):
         load_models("never-written", matrix, root=tmp_path)

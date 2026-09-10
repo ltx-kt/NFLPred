@@ -157,6 +157,20 @@ def load_models(
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     features = manifest["features"]
 
+    # The fingerprint is recomputed on the first `FINGERPRINT_N` validation rows.
+    # A matrix with no `val` split makes that an empty check - `np.allclose([],
+    # [])` is vacuously True and some estimators raise on a zero-row predict - so
+    # a wrong matrix here has to fail loudly rather than pass silently.
+    n_val = split_frame(matrix, "val").height
+    if n_val < FINGERPRINT_N:
+        msg = (
+            f"the matrix passed to load_models has {n_val} 'val' rows, fewer than "
+            f"the {FINGERPRINT_N} the fingerprint checks. It is not the matrix "
+            f"these models were fitted from (manifest hash "
+            f"{manifest.get('matrix_sha256_16')}); load with the right one."
+        )
+        raise ValueError(msg)
+
     models: dict[str, CalibratedClassifierCV] = {}
     mismatched: list[str] = []
 
@@ -169,7 +183,16 @@ def load_models(
         model = joblib.load(path)
         expected = manifest["fingerprint"][name]
         actual = fingerprint(model, matrix, features)
-        if not np.allclose(actual, expected, atol=10.0**-FINGERPRINT_PLACES):
+        if not actual or len(actual) != len(expected):
+            # An empty or short fingerprint means the matrix handed in has no (or
+            # too few) `val` rows to check against - not a match, and `np.allclose`
+            # would either pass vacuously on two empty lists or raise a broadcast
+            # error instead of reporting it.
+            mismatched.append(
+                f"  {name}: recomputed {len(actual)} probabilities vs manifest "
+                f"{len(expected)} - the matrix has the wrong 'val' split"
+            )
+        elif not np.allclose(actual, expected, atol=10.0**-FINGERPRINT_PLACES):
             mismatched.append(
                 f"  {name}: manifest {expected[:3]}... vs loaded {actual[:3]}..."
             )
