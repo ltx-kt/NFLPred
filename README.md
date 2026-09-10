@@ -200,6 +200,7 @@ src/nflpred/
   predict.py      week_frame (incl. unplayed games) + the weekly CLI
   predlog.py      the SQLite log: runs, predictions, member_predictions, outcomes
   explain.py      FEATURE_GLOSSARY (30 entries), SHAP attribution, narratives
+  _provenance.py  library versions recorded in the manifest and the log
   features/       pbp_agg.py, rolling.py, elo.py, qb.py, build.py
   modeling/       base.py (factory + calibration), ensemble.py, store.py
   api/            FastAPI: main.py, db.py, queries.py, analytics.py, routes/
