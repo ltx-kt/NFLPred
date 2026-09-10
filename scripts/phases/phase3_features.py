@@ -40,7 +40,6 @@ from nflpred.config import (
 )
 from nflpred.evaluate import (
     always_home,
-    halt_if_suspicious,
     market_probability,
     metrics_table,
     reliability_diagram,
@@ -57,7 +56,7 @@ from nflpred.features.build import (
 )
 from nflpred.modeling.base import split_frame
 
-from _shared import report_path, report_written
+from _shared import checked, report_path, report_written, require_matrix
 
 pl.Config.set_tbl_rows(40)
 pl.Config.set_tbl_width_chars(160)
@@ -112,13 +111,7 @@ def _coefficients(model: Pipeline, features: Sequence[str]) -> pl.DataFrame:
 
 
 def main() -> None:
-    for path in (FEATURE_MATRIX_PATH, FEATURE_MATRIX_GT_PATH):
-        if not path.exists():
-            msg = (
-                f"{path.name} not built. Run `python -m nflpred.features.build"
-                f"{' --garbage-time' if path is FEATURE_MATRIX_GT_PATH else ''}`."
-            )
-            raise FileNotFoundError(msg)
+    require_matrix(FEATURE_MATRIX_PATH, FEATURE_MATRIX_GT_PATH)
 
     matrix = pl.read_parquet(FEATURE_MATRIX_PATH)
     matrix_gt = pl.read_parquet(FEATURE_MATRIX_GT_PATH)
@@ -183,14 +176,8 @@ def main() -> None:
         )
     )
 
-    table = metrics_table(entries)
-
     # ---------------------------------------------------------- the tripwire
-    try:
-        halt_if_suspicious(table, entries=entries)
-    except SystemExit:
-        print(table)
-        raise
+    table = checked(metrics_table(entries), entries)
 
     print(f"\nvalidation {VAL_SEASONS[0]}-{VAL_SEASONS[1]}   [n features in brackets]")
     print(

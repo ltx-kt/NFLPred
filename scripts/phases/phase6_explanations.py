@@ -75,7 +75,7 @@ from nflpred.modeling.ensemble import (
     prefit_stack,
 )
 
-from _shared import report_path, report_written
+from _shared import report_path, report_written, require_matrix
 
 pl.Config.set_tbl_rows(40)
 pl.Config.set_tbl_width_chars(200)
@@ -83,12 +83,8 @@ pl.Config.set_fmt_str_lengths(40)
 
 
 def main() -> None:
-    if not FEATURE_MATRIX_GT_PATH.exists():
-        msg = (
-            f"{FEATURE_MATRIX_GT_PATH.name} not built. Run "
-            f"`python -m nflpred.features.build --garbage-time`."
-        )
-        raise FileNotFoundError(msg)
+    _glossary_sanity()
+    require_matrix(FEATURE_MATRIX_GT_PATH)
 
     matrix = pl.read_parquet(FEATURE_MATRIX_GT_PATH)
     train, calib, val = (split_frame(matrix, s) for s in ("train", "calib", "val"))
@@ -379,5 +375,4 @@ def _glossary_sanity() -> None:
 
 
 if __name__ == "__main__":
-    _glossary_sanity()
     main()

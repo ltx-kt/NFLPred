@@ -54,7 +54,6 @@ from nflpred.config import (
 from nflpred.evaluate import (
     accuracy,
     always_home,
-    halt_if_suspicious,
     log_loss,
     market_probability,
     metrics_table,
@@ -86,7 +85,7 @@ from nflpred.modeling.ensemble import (
 )
 from nflpred.modeling.store import load_models, save_models
 
-from _shared import report_path, report_written
+from _shared import checked, report_path, report_written, require_matrix
 
 pl.Config.set_tbl_rows(40)
 pl.Config.set_tbl_width_chars(160)
@@ -122,12 +121,7 @@ HEADLINE_STACK = STACK_A
 
 
 def main() -> None:
-    if not FEATURE_MATRIX_GT_PATH.exists():
-        msg = (
-            f"{FEATURE_MATRIX_GT_PATH.name} not built. Run "
-            f"`python -m nflpred.features.build --garbage-time`."
-        )
-        raise FileNotFoundError(msg)
+    require_matrix(FEATURE_MATRIX_GT_PATH)
 
     matrix = pl.read_parquet(FEATURE_MATRIX_GT_PATH)
     train, calib, val = (split_frame(matrix, s) for s in ("train", "calib", "val"))
@@ -204,15 +198,16 @@ def main() -> None:
         ]
     )
 
-    table = metrics_table(entries).with_columns(
-        pl.Series("group", ["ensemble"] * len(ensembles) + ["single"] * 5 + ["comparator"] * 4)
-    ).select(["model", "group", "n", "accuracy", "log_loss", "brier"])
-
-    try:
-        halt_if_suspicious(table, entries=entries)
-    except SystemExit:
-        print(table)
-        raise
+    table = checked(
+        metrics_table(entries)
+        .with_columns(
+            pl.Series(
+                "group", ["ensemble"] * len(ensembles) + ["single"] * 5 + ["comparator"] * 4
+            )
+        )
+        .select(["model", "group", "n", "accuracy", "log_loss", "brier"]),
+        entries,
+    )
 
     print(f"validation {VAL_SEASONS[0]}-{VAL_SEASONS[1]}   ({elapsed:.1f}s to fit everything)")
     print(table)

@@ -32,7 +32,7 @@ from nflpred.evaluate import (
 from nflpred.features.build import BASELINE_FEATURES, to_training_arrays
 from nflpred.modeling.base import split_frame
 
-from _shared import report_path, report_written
+from _shared import report_path, report_written, require_matrix
 
 pl.Config.set_tbl_rows(20)
 pl.Config.set_tbl_width_chars(120)
@@ -57,10 +57,7 @@ def _model() -> Pipeline:
 
 
 def main() -> None:
-    if not FEATURE_MATRIX_PATH.exists():
-        msg = f"{FEATURE_MATRIX_PATH.name} not built. Run `python -m nflpred.features.build`."
-        raise FileNotFoundError(msg)
-
+    require_matrix(FEATURE_MATRIX_PATH)
     matrix = pl.read_parquet(FEATURE_MATRIX_PATH)
     train, val = split_frame(matrix, "train"), split_frame(matrix, "val")
 

@@ -21,8 +21,10 @@ import pytest
 
 _PHASES = Path(__file__).resolve().parents[1] / "scripts" / "phases"
 
-#: The checkpoint scripts that must never name the held-out split.
+#: The checkpoint scripts that must never name the held-out split, plus the
+#: module they share - logic that moved into `_shared.py` still has to pass.
 HYGIENIC_SCRIPTS = [
+    _PHASES / "_shared.py",
     _PHASES / "phase2_baseline.py",
     _PHASES / "phase3_features.py",
     _PHASES / "phase4_models.py",

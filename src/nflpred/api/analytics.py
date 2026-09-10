@@ -25,7 +25,7 @@ import polars as pl
 from sklearn.calibration import calibration_curve
 
 from nflpred.config import RECENCY_HALF_LIFE
-from nflpred.evaluate import ACCURACY_CEILING, expand_ties, metrics_table
+from nflpred.evaluate import ACCURACY_CEILING, MARKET_LABEL, expand_ties, metrics_table
 from nflpred.predlog import settled_predictions
 
 #: Vegas straight-up hit rate, for the "this is good, not suspicious" band on the
@@ -80,7 +80,7 @@ def _comparator_entries(frame: pl.DataFrame) -> list[tuple[str, np.ndarray, np.n
     return [
         ("ensemble", y, ensemble),
         ("elo only", y, elo),
-        ("market (de-vigged)", y, market),
+        (MARKET_LABEL, y, market),
     ]
 
 

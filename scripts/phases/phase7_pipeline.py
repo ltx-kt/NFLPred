@@ -59,7 +59,6 @@ from nflpred.config import (
 )
 from nflpred.evaluate import (
     always_home,
-    halt_if_suspicious,
     market_probability,
     metrics_table,
     reliability_diagram,
@@ -67,7 +66,7 @@ from nflpred.evaluate import (
 from nflpred.modeling.ensemble import ENSEMBLE_FEATURES, MEMBER_ORDER
 from nflpred.predlog import config_suffixes, connect, rolling_brier, summary
 
-from _shared import report_path, report_written
+from _shared import checked, report_path, report_written, require_matrix
 
 pl.Config.set_tbl_rows(40)
 pl.Config.set_tbl_width_chars(170)
@@ -90,12 +89,7 @@ FROZEN = "frozen-split stack A (Phase 5 construction)"
 
 
 def main() -> None:
-    if not FEATURE_MATRIX_GT_PATH.exists():
-        msg = (
-            f"{FEATURE_MATRIX_GT_PATH.name} not built. Run "
-            f"`python -m nflpred.features.build --garbage-time`."
-        )
-        raise FileNotFoundError(msg)
+    require_matrix(FEATURE_MATRIX_GT_PATH)
 
     matrix = pl.read_parquet(FEATURE_MATRIX_GT_PATH)
     half_life = RECENCY_HALF_LIFE
@@ -117,7 +111,7 @@ def main() -> None:
         matrix, TEST_SEASONS, half_life, "2. THE TEST TOUCH", spends_the_budget=True
     )
 
-    _reliability(matrix, validation, test)
+    _reliability(validation, test)
     _log_report()
     _closing(validation, val_frozen, test, test_frozen)
 
@@ -206,12 +200,7 @@ def _section(
         .with_columns(pl.Series("group", groups))
         .select(["model", "group", "n", "accuracy", "log_loss", "brier"])
     )
-
-    try:
-        halt_if_suspicious(table, entries=entries)
-    except SystemExit:
-        print(table)
-        raise
+    checked(table, entries)
 
     weeks = weighted.weeks
     print(
@@ -319,9 +308,7 @@ def _by_season(
     )
 
 
-def _reliability(
-    matrix: pl.DataFrame, validation: WalkForward, test: WalkForward
-) -> None:
+def _reliability(validation: WalkForward, test: WalkForward) -> None:
     """One diagram, both spans, against Elo and the market."""
     combined = pl.concat(
         [validation.predictions, test.predictions], how="vertical"

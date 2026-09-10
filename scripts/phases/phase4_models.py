@@ -42,7 +42,6 @@ from nflpred.config import (
 )
 from nflpred.evaluate import (
     always_home,
-    halt_if_suspicious,
     market_probability,
     metrics_table,
     reliability_diagram,
@@ -65,7 +64,7 @@ from nflpred.modeling.base import (
 )
 from nflpred.modeling.store import load_models, save_models
 
-from _shared import report_path, report_written
+from _shared import checked, report_path, report_written, require_matrix
 
 pl.Config.set_tbl_rows(40)
 pl.Config.set_tbl_width_chars(160)
@@ -141,13 +140,7 @@ def _table(
 
 
 def main() -> None:
-    for path in (FEATURE_MATRIX_PATH, FEATURE_MATRIX_GT_PATH):
-        if not path.exists():
-            msg = (
-                f"{path.name} not built. Run `python -m nflpred.features.build"
-                f"{' --garbage-time' if path is FEATURE_MATRIX_GT_PATH else ''}`."
-            )
-            raise FileNotFoundError(msg)
+    require_matrix(FEATURE_MATRIX_PATH, FEATURE_MATRIX_GT_PATH)
 
     # D-9 instructed Phase 4 to fit on the filtered matrix. The unfiltered one
     # is loaded too, as the re-check that decision asked for.
@@ -218,13 +211,7 @@ def main() -> None:
         entries.append((label, y_val, probabilities))
         counts.append(n_feat)
 
-    table = _table(entries, in_sample, counts)
-
-    try:
-        halt_if_suspicious(table, entries=entries)
-    except SystemExit:
-        print(table)
-        raise
+    table = checked(_table(entries, in_sample, counts), entries)
 
     print(
         f"validation {VAL_SEASONS[0]}-{VAL_SEASONS[1]}   "
@@ -306,12 +293,7 @@ def main() -> None:
     )
     follow_counts.append(str(len(best_features)))
 
-    follow_table = _table(follow_entries, [], follow_counts)
-    try:
-        halt_if_suspicious(follow_table, entries=follow_entries)
-    except SystemExit:
-        print(follow_table)
-        raise
+    follow_table = checked(_table(follow_entries, [], follow_counts), follow_entries)
 
     print("\nfollow-ups")
     print(follow_table)

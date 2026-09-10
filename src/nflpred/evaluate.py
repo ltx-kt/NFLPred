@@ -40,9 +40,14 @@ _EPS: float = 1e-15
 #: tripwire that eventually differs per phase.
 ACCURACY_CEILING: float = 0.72
 
+#: The de-vigged closing line's row label, wherever it is scored or plotted.
+#: One constant so a typo in a phase script cannot make the market row trip the
+#: tripwire (it is exempt only by exact-string match) or drop out of a chart.
+MARKET_LABEL: str = "market (de-vigged)"
+
 #: Comparators are exempt from the tripwire: the market line is allowed to be
 #: good, and a leak is not what it would mean if it were.
-_CEILING_EXEMPT: frozenset[str] = frozenset({"market (de-vigged)"})
+_CEILING_EXEMPT: frozenset[str] = frozenset({MARKET_LABEL})
 
 
 def expand_ties(
