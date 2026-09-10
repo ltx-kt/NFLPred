@@ -17,7 +17,7 @@ from pathlib import Path
 import polars as pl
 import pytest
 
-from nflpred.config import TEAM_GAME_GT_PATH
+from nflpred.config import FRONTEND_DIST, TEAM_GAME_GT_PATH
 
 pytest.importorskip("fastapi")
 
@@ -154,3 +154,22 @@ def test_members_scoped_to_one_config(client: TestClient) -> None:
         "catboost",
         "elo",
     }
+
+
+@pytest.mark.skipif(
+    not (FRONTEND_DIST / "index.html").is_file(),
+    reason="SPA catch-all is only mounted when frontend/dist is built",
+)
+def test_spa_catch_all_does_not_serve_files_outside_the_build_tree() -> None:
+    """`%2e%2e` segments must not escape frontend/dist onto the repo root.
+
+    `Path.is_relative_to` is lexical, so before the `.resolve()` guard a request
+    for `/%2e%2e/%2e%2e/pyproject.toml` walked out of the build tree and returned
+    the file. The route must fall back to index.html instead.
+    """
+    index_bytes = (FRONTEND_DIST / "index.html").read_bytes()
+    with TestClient(app) as spa_client:
+        resp = spa_client.get("/%2e%2e/%2e%2e/pyproject.toml")
+    assert resp.status_code == 200
+    assert resp.content == index_bytes
+    assert b"[project]" not in resp.content

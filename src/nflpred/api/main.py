@@ -49,13 +49,18 @@ if (_DIST / "index.html").is_file():
     # /game/...) still loads the app. `StaticFiles(html=True)` alone does not do
     # this - it 404s unknown paths - hence the explicit catch-all.
     app.mount("/assets", StaticFiles(directory=_DIST / "assets"), name="assets")
-    _INDEX = _DIST / "index.html"
+    _ROOT = _DIST.resolve()
+    _INDEX = _ROOT / "index.html"
 
     @app.get("/{full_path:path}", include_in_schema=False)
     def spa(full_path: str) -> FileResponse:
         if full_path.startswith("api/"):
             raise HTTPException(status_code=404, detail="unknown API route")
-        candidate = _DIST / full_path
-        if full_path and candidate.is_file() and candidate.is_relative_to(_DIST):
+        # Resolve before the containment check: `is_relative_to` is lexical and
+        # does not collapse `..`, so `/%2e%2e/%2e%2e/pyproject.toml` would
+        # otherwise escape the build tree. Order matters too - prove containment
+        # before touching the filesystem.
+        candidate = (_ROOT / full_path).resolve()
+        if full_path and candidate.is_relative_to(_ROOT) and candidate.is_file():
             return FileResponse(candidate)
         return FileResponse(_INDEX)
