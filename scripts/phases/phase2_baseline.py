@@ -2,7 +2,7 @@
 
 A scaled, L2-penalised logistic regression on ten features, fit on 2006-2015
 and reported on 2019-2021. Calibration seasons (2016-2018) and the test set
-(2022-2025) are not touched — the first belongs to Phase 4, the second is
+(2022-2025) are not touched - the first belongs to Phase 4, the second is
 opened once, at the end.
 
 The point is not the model. The point is an honest number produced by the
@@ -82,7 +82,7 @@ def main() -> None:
         pl.col("coefficient").round(4),
         pl.col("train_sd").round(4),
         # Coefficients are on the standardised scale, so magnitude is directly
-        # comparable across features — that is the whole reason for the scaler.
+        # comparable across features - that is the whole reason for the scaler.
         abs_coefficient=pl.col("coefficient").abs(),
     ).sort("abs_coefficient", descending=True).drop("abs_coefficient")
 
@@ -109,7 +109,7 @@ def main() -> None:
     path = reliability_diagram(
         entries,
         report_path("phase2_baseline_reliability.png"),
-        title=f"Phase 2 baseline — validation {VAL_SEASONS[0]}-{VAL_SEASONS[1]}",
+        title=f"Phase 2 baseline - validation {VAL_SEASONS[0]}-{VAL_SEASONS[1]}",
     )
     report_written(path)
 

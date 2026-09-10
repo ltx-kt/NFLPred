@@ -1,7 +1,7 @@
 """Phase 1 checkpoint report.
 
-Prints what the spec asks for at the end of the data phase — shape, date range,
-null counts — plus the reconciliation checks that decide whether the team-game
+Prints what the spec asks for at the end of the data phase - shape, date range,
+null counts - plus the reconciliation checks that decide whether the team-game
 table can be trusted as the substrate for everything downstream.
 
     python scripts/phase1_report.py

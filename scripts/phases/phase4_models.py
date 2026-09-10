@@ -6,7 +6,7 @@ comparators. This is a **measurement** phase: the deliverable is an honest table
 saying which estimators earn their place, not a tuned winner.
 
 Hyperparameters are frozen constants (D-16) chosen by `scripts/tune_models.py`
-on the training seasons alone. Nothing here searches anything — a checkpoint
+on the training seasons alone. Nothing here searches anything - a checkpoint
 that tunes is a checkpoint that reports a selection artefact.
 
 Three things the spec carried into Phase 4 are discharged by the follow-up rows:
@@ -77,7 +77,7 @@ FEATURE_SETS: dict[str, tuple[str, Sequence[str]]] = {
     "phase3 (29)": ("phase3_29", PHASE3_FEATURES),
 }
 
-#: The three gradient boosters, for "best booster" — the wide-feature control
+#: The three gradient boosters, for "best booster" - the wide-feature control
 #: and the D-9 re-check are both specified against the strongest of them.
 BOOSTERS: tuple[str, ...] = ("xgboost", "lightgbm", "catboost")
 
@@ -92,7 +92,7 @@ Entry = tuple[str, np.ndarray, np.ndarray]
 def _calibrated_elo(calib: pl.DataFrame, evaluate: pl.DataFrame) -> np.ndarray:
     """Elo, Platt-scaled on the calibration seasons.
 
-    Two lines because the scaler itself now lives in `nflpred.modeling.base` — Phase 5
+    Two lines because the scaler itself now lives in `nflpred.modeling.base` - Phase 5
     holds it as an ensemble member, so it is shared rather than copied.
     """
     return elo_platt_probability(fit_elo_platt(calib), elo_probability(evaluate))
@@ -123,8 +123,8 @@ def _table(
 ) -> pl.DataFrame:
     """Metrics for every entry, plus feature count and in-sample loss.
 
-    ``in_sample`` covers only the leading model rows — comparators have no
-    training loss — so it is padded rather than joined by name. Two rows share
+    ``in_sample`` covers only the leading model rows - comparators have no
+    training loss - so it is padded rather than joined by name. Two rows share
     the name ``logreg``, one per feature set, and a join would multiply them.
     """
     table = metrics_table(entries).with_columns(pl.Series("n_feat", counts))
@@ -155,7 +155,7 @@ def main() -> None:
         f"calibration {CALIB_SEASONS[0]}-{CALIB_SEASONS[1]}: {calib.height:,}   "
         f"validation {VAL_SEASONS[0]}-{VAL_SEASONS[1]}: {val.height:,}   (test untouched)"
     )
-    print(f"matrix: {FEATURE_MATRIX_GT_PATH.name} — garbage-time filtered, per D-9\n")
+    print(f"matrix: {FEATURE_MATRIX_GT_PATH.name} - garbage-time filtered, per D-9\n")
 
     entries: list[Entry] = []
     in_sample: list[Entry] = []
@@ -187,7 +187,7 @@ def main() -> None:
             meta={"phase": 4, "feature_set": set_name, "calibration": "sigmoid"},
             matrix_path=FEATURE_MATRIX_GT_PATH,
         )
-        # Artifacts are outputs, not a cache (D-17) — so the run that writes them
+        # Artifacts are outputs, not a cache (D-17) - so the run that writes them
         # is the run that proves they read back as the same models.
         load_models(key, matrix)
         print(
@@ -301,7 +301,7 @@ def main() -> None:
     # ------------------------------------------------------------- diagram
     #
     # Four curves: the best calibrated model, that same model's uncalibrated
-    # base, Elo raw, and the market. The pair is the point — if D-5's calibrator
+    # base, Elo raw, and the market. The pair is the point - if D-5's calibrator
     # is doing its job the calibrated curve sits closer to the diagonal than the
     # raw one, and if it does not, the calibrator is misfitted rather than
     # merely unhelpful.
@@ -314,7 +314,7 @@ def main() -> None:
     path = reliability_diagram(
         plotted,
         report_path("phase4_models_reliability.png"),
-        title=f"Phase 4 base models — validation {VAL_SEASONS[0]}-{VAL_SEASONS[1]}",
+        title=f"Phase 4 base models - validation {VAL_SEASONS[0]}-{VAL_SEASONS[1]}",
     )
     report_written(path)
 

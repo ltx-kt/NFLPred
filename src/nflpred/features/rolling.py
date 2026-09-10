@@ -3,7 +3,7 @@
 Takes the same-game rows produced by :mod:`nflpred.features.pbp_agg` and turns them
 into rows that carry only what was knowable **before** kickoff. This is the one
 module where leakage can enter, so the lagging itself is confined to a single
-helper — :func:`lagged` — and everything else is bookkeeping around it.
+helper - :func:`lagged` - and everything else is bookkeeping around it.
 
 The rule, stated once:
 
@@ -16,7 +16,7 @@ Two ordering details matter and are easy to get wrong:
   apart. ``gameday`` is the actual chronology.
 * Windows deliberately cross season boundaries (D-6). 2006 week 1 uses the tail
   of 2005. Seasons 1999-2005 were ingested for exactly this (D-2), so every row
-  the feature matrix keeps has a full window behind it — nothing dropped,
+  the feature matrix keeps has a full window behind it - nothing dropped,
   nothing imputed.
 
 Alongside the fixed 4- and 8-game windows there is a season-to-date window: an
@@ -28,13 +28,13 @@ Three window expressions live here and nowhere else, so that every place a leak
 could enter is in one file the leak tests audit:
 
 ``lagged``
-    The lagging one. ``rolling_mean().shift(1)`` — the row's own game is
+    The lagging one. ``rolling_mean().shift(1)`` - the row's own game is
     excluded by the shift.
 ``_expanding``
     The season-to-date twin of the above, same shift, same rule.
 ``through``
     Deliberately **not** lagged: the window ends at and includes the row. It is
-    legal only because its one caller — :mod:`nflpred.features.qb` — joins it to a
+    legal only because its one caller - :mod:`nflpred.features.qb` - joins it to a
     game by a strictly-earlier as-of key, so the lag lives in the join instead
     of in the window. Read its docstring before using it anywhere else.
 """
@@ -68,7 +68,7 @@ _STEMS: Final[dict[str, str]] = {
 }
 
 #: Columns carried through unchanged. These describe the fixture, not its
-#: result — except ``won``, which is the target and is labelled as such
+#: result - except ``won``, which is the target and is labelled as such
 #: downstream rather than being fed back in as a feature.
 _KEYS: Final[tuple[str, ...]] = (
     "game_id",
@@ -121,14 +121,14 @@ def lagged(column: str, window: int, partition: str = "team") -> pl.Expr:
 
     ``partition`` is a team here and a ``passer_player_id`` in
     :mod:`nflpred.features.qb`. Parameterising it is what keeps the QB composite
-    from growing a second lagging expression — there is one idiom to audit, and
+    from growing a second lagging expression - there is one idiom to audit, and
     the leak tests audit it.
 
     ``min_samples=1`` yields a partial mean rather than a null for a team's
     first few games. Polars skips nulls inside the window, so a statistic that
     is undefined for one game (a team with no rush attempts, say) shrinks that
     window rather than voiding it. The first game of a series is null either
-    way — there is nothing prior to average.
+    way - there is nothing prior to average.
     """
     return (
         pl.col(column)
@@ -142,7 +142,7 @@ def through(column: str, window: int, partition: str = "team") -> pl.Expr:
     """:func:`lagged` without the shift: the window **includes** the row itself.
 
     Not a lagging expression, and it must never be joined to a game row by that
-    game's own key — doing so would be exactly the leak :func:`lagged` exists to
+    game's own key - doing so would be exactly the leak :func:`lagged` exists to
     prevent. It exists for one caller, :func:`nflpred.features.qb.build_qb`, which
     needs a series indexed by *when a value became knowable* rather than by
     *which game may use it*, and then does the excluding in the join.
@@ -150,7 +150,7 @@ def through(column: str, window: int, partition: str = "team") -> pl.Expr:
     The pattern, stated once because it is the only place it appears: a
     quarterback's row at his start on day *d* carries his form **through** *d*,
     and a game on day *G* reads the last such row with ``d < G``. That gives the
-    same answer whether or not he starts the game on *G* — which is what makes
+    same answer whether or not he starts the game on *G* - which is what makes
     the composite computable for a fixture that has not kicked off (D-8, D-31).
     An inclusive window plus a strictly-earlier join is one lag, not none;
     splitting it across the two halves is what buys train/serve equality.
@@ -166,7 +166,7 @@ def _expanding(column: str) -> pl.Expr:
     shift is what makes the feature legal**, exactly as above.
 
     ``.over(["team", "season"])`` restarts the window each September, so the
-    shift also makes the first game of every season null — correct, since there
+    shift also makes the first game of every season null - correct, since there
     is no season-to-date form before the season starts. :func:`build_rolling`
     fills that hole from the 8-game window and flags it.
 
@@ -211,7 +211,7 @@ def build_rolling(
     Also emits ``off_<stem>_std`` / ``def_<stem>_std`` for ``std_stats``: the
     season-to-date mean, restricted to the handful of statistics where "so far
     this season" carries information the 8-game window does not. Rolling all 23
-    would add 46 columns of mostly noise — a season-to-date third-down-attempt
+    would add 46 columns of mostly noise - a season-to-date third-down-attempt
     count says more about the calendar than about the team.
 
     ``games_in_season`` counts prior games *within* the season and

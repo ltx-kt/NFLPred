@@ -10,7 +10,7 @@ Tuesday. This module is the second question.
 target week, the base estimators are fitted on everything completed before its
 earliest kickoff *except* the trailing :data:`~nflpred.config.CALIB_WINDOW_SEASONS`
 seasons, which the calibrator gets and the base fit never sees. That is D-5's
-structure — bases and calibrators never share rows — moved through time rather
+structure - bases and calibrators never share rows - moved through time rather
 than abandoned. Everything else about the fit is the D-22 construction,
 unchanged: five estimators from the factory, Platt-scaled Elo, prefit stack A.
 
@@ -19,7 +19,7 @@ had been fitted to a 58.3%-home-win era and scored in a 51.3% one, and made log
 loss *worse* for it. The spec named recency weighting as the fix and explicitly
 ruled out the alternative, which was tuning the calibrator against validation.
 Weights ride D-4's ``sample_weight`` channel, multiplying into the tie encoding
-rather than replacing it — :func:`~nflpred.evaluate.expand_ties` composes them, and
+rather than replacing it - :func:`~nflpred.evaluate.expand_ties` composes them, and
 `tests/test_recency.py` exercises the composition rather than assuming it.
 
 **The one thing this module must never do** is fit on a game that had not
@@ -72,7 +72,7 @@ from nflpred.modeling.ensemble import (
 WEIGHT_COLUMN: str = "recency"
 
 #: The column :func:`recency_weights` measures lag against. League weeks, not
-#: calendar weeks — see :func:`~nflpred.features.build.league_week_index`.
+#: calendar weeks - see :func:`~nflpred.features.build.league_week_index`.
 CLOCK_COLUMN: str = "league_week"
 
 
@@ -162,7 +162,7 @@ def split_windows(
     target the two windows land exactly on D-5's frozen boundaries, which is the
     sense in which this generalises that decision rather than replacing it.
 
-    The alternative reading — only seasons that have *finished* — would push the
+    The alternative reading - only seasons that have *finished* - would push the
     in-progress season into the base fit, putting the freshest games behind the
     calibrator rather than in front of it. That is the wrong side for the one
     thing recency weighting exists to fix (D-18).
@@ -196,7 +196,7 @@ def fit_week(
     """The D-22 construction, fitted on one week's worth of history.
 
     ``completed`` must already exclude the target week. This function does not
-    check that — :func:`walk_forward` and :mod:`nflpred.predict` both cut the frame
+    check that - :func:`walk_forward` and :mod:`nflpred.predict` both cut the frame
     by kickoff before calling, and re-deriving the cut here from a week number
     would introduce the second definition the module docstring warns about.
 
@@ -204,7 +204,7 @@ def fit_week(
     fitted on. The five members are always fitted on
     :data:`~nflpred.features.build.CORE_FEATURES`, because
     :data:`~nflpred.modeling.ensemble.BASE_COLUMNS` hard-codes the slice they read
-    back — that pairing is the ensemble module's layout, not a choice here.
+    back - that pairing is the ensemble module's layout, not a choice here.
     """
     started = time.perf_counter()
 
@@ -246,8 +246,8 @@ def fit_week(
 def score_week(fit: WeeklyFit, target: pl.DataFrame) -> pl.DataFrame:
     """One row per game of ``target``: the stack, every member, and the raw Elo.
 
-    Members are the **calibrated** six — the votes the output contract reports
-    (D-21's note) — while the stack holds the raw ones, which is stack A's whole
+    Members are the **calibrated** six - the votes the output contract reports
+    (D-21's note) - while the stack holds the raw ones, which is stack A's whole
     construction. Both are emitted flat so that the per-member rolling Brier the
     spec asks for is a query rather than a JSON walk.
     """
@@ -331,7 +331,7 @@ def walk_forward(
     ``cadence`` is how many target weeks one fit serves. It is a parameter
     because a weekly refit of ten models is the dominant cost of both this
     harness and the tuning grid, and **production and tuning must use the same
-    value** — a half-life gridded at cadence 4 and served at cadence 1 was
+    value** - a half-life gridded at cadence 4 and served at cadence 1 was
     chosen for a different system. The default is 1 and nothing in the project
     changes it.
 
@@ -394,7 +394,7 @@ def walk_forward(
 
 
 def effective_sample_size(weights: np.ndarray) -> float:
-    """Kish's ``(sum w)^2 / sum w^2`` — how many games a weighted fit is worth.
+    """Kish's ``(sum w)^2 / sum w^2`` - how many games a weighted fit is worth.
 
     Reported rather than assumed, because it is the whole cost side of the
     recency trade: a half-life short enough to track a shifting home-field

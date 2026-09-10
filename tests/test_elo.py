@@ -1,8 +1,8 @@
 """Elo, with the ordering rule as the thing under test.
 
 :mod:`nflpred.features.elo` records a pre-game rating and only then applies the
-update. Every other property of the system — that ratings regress, that the
-expectation is symmetric, that HOU starts low — is arithmetic that would be
+update. Every other property of the system - that ratings regress, that the
+expectation is symmetric, that HOU starts low - is arithmetic that would be
 merely wrong if broken. That one ordering rule is the difference between a
 feature and a leak, so it gets the perturbation treatment: rewrite a game's
 result, rebuild, and demand that the game's *own* rating did not move while the
@@ -92,7 +92,7 @@ def test_perturbing_a_result_does_change_the_next_games_elo(perturbation):
 def test_perturbing_a_result_does_not_change_uninvolved_teams_before_they_meet(
     perturbation,
 ):
-    """Elo is transitive, so a shock propagates — but not backwards in time."""
+    """Elo is transitive, so a shock propagates - but not backwards in time."""
     before, after, target = perturbation
     involved = {target["home_team"], target["away_team"]}
 

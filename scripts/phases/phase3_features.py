@@ -1,7 +1,7 @@
 """Phase 3 checkpoint: what each feature group is actually worth.
 
-The Phase 2 bar was one number. This is the same number, decomposed — Elo, then
-the QB composite, then the rest of Tier 2 — so that a group which contributes
+The Phase 2 bar was one number. This is the same number, decomposed - Elo, then
+the QB composite, then the rest of Tier 2 - so that a group which contributes
 nothing can be identified as contributing nothing rather than disappearing into
 an aggregate improvement.
 
@@ -93,7 +93,7 @@ def _coefficients(model: Pipeline, features: Sequence[str]) -> pl.DataFrame:
     """Standardised coefficients, largest first.
 
     Magnitudes are comparable across features because the scaler put them on the
-    same footing — which is the whole reason it is in the pipeline.
+    same footing - which is the whole reason it is in the pipeline.
     """
     return (
         pl.DataFrame(
@@ -156,7 +156,7 @@ def main() -> None:
         entries.append((label, score_on["home_win"].to_numpy(), probabilities))
         models[name] = (model, features)
 
-        # The same model scored on the data it was fit to. Not a result — a
+        # The same model scored on the data it was fit to. Not a result - a
         # diagnostic. A feature set whose training loss falls while its
         # validation loss rises is overfitting, and that is worth being able to
         # see rather than infer.
@@ -201,7 +201,7 @@ def main() -> None:
     path = reliability_diagram(
         shown,
         report_path("phase3_features_reliability.png"),
-        title=f"Phase 3 features — validation {VAL_SEASONS[0]}-{VAL_SEASONS[1]}",
+        title=f"Phase 3 features - validation {VAL_SEASONS[0]}-{VAL_SEASONS[1]}",
     )
     report_written(path)
 

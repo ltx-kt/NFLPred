@@ -1,7 +1,7 @@
 """Phase 7 checkpoint: the walk-forward number, and the single test touch.
 
 Phases 1-6 were one fit, held still. This is the same system refitted every
-week — base estimators on everything completed before kickoff, calibrator on the
+week - base estimators on everything completed before kickoff, calibrator on the
 trailing three seasons, held out of the base fit (D-26). It is the number the
 project should be judged on, because it is the only one that describes what the
 system does rather than what a snapshot of it scored.
@@ -21,7 +21,7 @@ Five things are printed:
 2. **The test touch**, same table.
 3. A reliability diagram over the walk-forward predictions.
 4. Per-member rolling Brier, read back **out of the prediction log** rather than
-   recomputed in memory — which is what proves the log can score itself.
+   recomputed in memory - which is what proves the log can score itself.
 5. Log summary: rows written, model versions, settled fraction.
 
 `halt_if_suspicious` guards every table. Vegas hits 66-68% straight up; anything
@@ -96,7 +96,7 @@ def main() -> None:
     frozen = "off (unweighted)" if half_life is None else f"{half_life:g} league weeks"
 
     print("=" * 78)
-    print("Phase 7 — walk-forward retraining, recency weighting, prediction log")
+    print("Phase 7 - walk-forward retraining, recency weighting, prediction log")
     print("=" * 78)
     print(
         f"matrix: {FEATURE_MATRIX_GT_PATH.name}   features: {len(ENSEMBLE_FEATURES)}   "
@@ -133,7 +133,7 @@ def _section(
     as published (D-31 moved it).
     """
     print("\n" + "=" * 78)
-    print(f"{heading} — {seasons[0]}-{seasons[1]}")
+    print(f"{heading} - {seasons[0]}-{seasons[1]}")
     print("=" * 78)
     if spends_the_budget:
         print(
@@ -155,7 +155,7 @@ def _section(
     y = weighted.y
 
     # The D-26 comparability row needs feature columns, which the prediction
-    # frame does not carry — so the matrix rows for the same games, in the same
+    # frame does not carry - so the matrix rows for the same games, in the same
     # order, checked rather than assumed.
     features = matrix.filter(
         pl.col("game_id").is_in(target["game_id"].to_list())
@@ -331,7 +331,7 @@ def _reliability(validation: WalkForward, test: WalkForward) -> None:
         entries,
         report_path("phase7_walkforward_reliability.png"),
         title=(
-            f"Phase 7 walk-forward — {VAL_SEASONS[0]}-{TEST_SEASONS[1]}, "
+            f"Phase 7 walk-forward - {VAL_SEASONS[0]}-{TEST_SEASONS[1]}, "
             f"refit weekly"
         ),
     )
@@ -371,7 +371,7 @@ def _log_report() -> None:
         connection.close()
 
     print(
-        f"configurations in the log: {', '.join(suffixes) or 'none'} — reporting on "
+        f"configurations in the log: {', '.join(suffixes) or 'none'} - reporting on "
         f"{suffixes[0] if suffixes else 'none'}, because pooling two\nconfigurations' "
         f"predictions on the same games would score a model that never existed."
     )
@@ -386,7 +386,7 @@ def _log_report() -> None:
         print("\ntrailing 4 weeks:")
         print(trailing)
         print(
-            "  Reported, never fed back into the weights — the spec's open-questions "
+            "  Reported, never fed back into the weights - the spec's open-questions "
             "section resolved in-season item 3 that way, because the members\n"
             "  correlate at 0.959 and every weighting scheme lands within 0.0006 of "
             "every other (D-21)."
@@ -460,12 +460,12 @@ def _closing(
         f"{PHASE5_PUBLISHED['accuracy']:.4f} for the frozen split on validation. The "
         f"row above is\n  the same construction refitted today, which D-31's "
         f"quarterback-composite fix moved. Compare walk-forward against the refitted "
-        f"row, not\n  against the published one — the two differ in more than the "
+        f"row, not\n  against the published one - the two differ in more than the "
         f"thing being measured."
     )
     print(
         "\n  D-18 said the test era would differ from validation in either direction, "
-        "and that it could not be predicted which — 2022-2025 is a third\n"
+        "and that it could not be predicted which - 2022-2025 is a third\n"
         "  home-field regime, not a continuation of the second. Read the gap between "
         "the two walk-forward numbers as that, not as overfitting."
     )

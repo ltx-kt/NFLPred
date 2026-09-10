@@ -1,23 +1,23 @@
 """The Phase 5 ensemble layer: six members, one probability, and the plumbing.
 
-Phase 4 found no winner among the five estimators — 0.0079 of log loss separates
+Phase 4 found no winner among the five estimators - 0.0079 of log loss separates
 all ten fitted models, and none of them clears the Phase 3 bar. Phase 5 is the
 spec's answer: combine them, and say plainly whether that helps.
 
 **The one design choice everything else follows from.** Elo is a member but not
-an sklearn estimator — the rating system emits a probability directly, and
+an sklearn estimator - the rating system emits a probability directly, and
 `elo_prob` is a column of the feature matrix. Rather than special-case it at
 every call site, the matrix column rides along in the feature tuple:
 
     ENSEMBLE_FEATURES = (*CORE_FEATURES, "elo_prob")     # 16 columns, then one
 
 Every ensemble object is then a plain ``predict_proba(X)`` estimator that slices
-internally — the five sklearn members read ``X[:, :16]``, the Elo member reads
+internally - the five sklearn members read ``X[:, :16]``, the Elo member reads
 ``X[:, 16]``. That is what lets
 :func:`~nflpred.modeling.base.home_win_probability`, :func:`~nflpred.modeling.store.save_models`
 and :func:`~nflpred.modeling.store.load_models` work on an ensemble **unchanged**: they
 already take a ``(model, frame, features)`` triple and do
-``frame.select(features).to_numpy()``. Passing `elo_diff` instead would not do —
+``frame.select(features).to_numpy()``. Passing `elo_diff` instead would not do -
 `elo_prob` carries the home-field and neutral-site handling `nflpred.features.elo`
 applies, and `elo_diff` alone would make the Elo member a different model.
 
@@ -25,7 +25,7 @@ applies, and `elo_diff` alone would make the Elo member a different model.
 `FrozenEstimator` for calibration (D-13), so its absence here reads as an
 oversight unless stated: `FrozenEstimator` **cannot be a VotingClassifier
 member**. `VotingClassifier._validate_estimators` runs `is_classifier` on each
-member, and a frozen wrapper does not answer to it — "The estimator
+member, and a frozen wrapper does not answer to it - "The estimator
 FrozenEstimator should be a classifier". :class:`PrefitMember` is the
 project-owned replacement, and subclasses `ClassifierMixin` **first** in the MRO
 because under the 1.6+ tags API putting `BaseEstimator` first silently fails
@@ -35,7 +35,7 @@ because under the 1.6+ tags API putting `BaseEstimator` first silently fails
 ``StackingClassifier(..., cv=TimeSeriesSplit(...))``. That does not run on
 scikit-learn 1.9: `StackingClassifier` builds its meta-features with
 `cross_val_predict`, which raises ``"cross_val_predict only works for
-partitions"`` — and a `TimeSeriesSplit` is not a partition, since the earliest
+partitions"`` - and a `TimeSeriesSplit` is not a partition, since the earliest
 block is never in a test fold. :class:`TimeSeriesStack` does what the spec asked
 for, forward-chained and honest about the rows it drops. See D-20.
 """
@@ -113,7 +113,7 @@ class PrefitMember(ClassifierMixin, BaseEstimator):
 
     ``fit`` is a no-op and ``__sklearn_clone__`` returns ``self``, so neither
     `VotingClassifier` nor `StackingClassifier` can refit the wrapped model no
-    matter which of them holds it — the members stay exactly the objects Phase 4
+    matter which of them holds it - the members stay exactly the objects Phase 4
     fitted on 2006-2015 and calibrated on 2016-2018. `tests/test_ensemble.py`
     pins that by comparing every member's validation predictions before and
     after each ensemble fit.
@@ -195,7 +195,7 @@ class EloMember(ClassifierMixin, BaseEstimator):
     """Elo as an ensemble member: read column 16, optionally Platt-scale it.
 
     Nothing is fitted here in either mode. With ``platt=None`` this is exactly
-    :func:`~nflpred.modeling.base.elo_probability` — a test pins that equality — which
+    :func:`~nflpred.modeling.base.elo_probability` - a test pins that equality - which
     is also why it is safe inside :class:`TimeSeriesStack`: a member with no
     parameters cannot leak across a fold boundary. With a ``platt`` fitted on the
     calibration seasons it is the "elo only (calibrated)" comparator, so the
@@ -241,7 +241,7 @@ def build_members(
 ) -> list[Member]:
     """The six members, in :data:`MEMBER_ORDER`, ready for either meta-estimator.
 
-    ``estimators`` supplies the five sklearn models under their project names —
+    ``estimators`` supplies the five sklearn models under their project names -
     calibrated wrappers or the bare fitted bases, depending on which variant is
     being built. Elo is appended rather than looked up: it is not in the dict and
     never will be.
@@ -259,7 +259,7 @@ def build_members(
 
 
 def _meta_learner() -> LogisticRegression:
-    """The stacking meta-learner. Linear on purpose — the spec's SHAP-combination
+    """The stacking meta-learner. Linear on purpose - the spec's SHAP-combination
     step needs coefficients it can use as weights, and says to skip that step
     entirely if the meta-learner is nonlinear."""
     return LogisticRegression(max_iter=1000, random_state=RANDOM_STATE)
@@ -282,8 +282,8 @@ def soft_vote(
 
     Two weight arguments, and they are not the same thing. ``weights`` is
     sklearn's per-**member** vote weighting; ``weight`` names a per-**row**
-    column, the Phase 7 recency channel. It changes nothing here — this fit
-    learns nothing to weight — and is accepted so that every ensemble builder
+    column, the Phase 7 recency channel. It changes nothing here - this fit
+    learns nothing to weight - and is accepted so that every ensemble builder
     takes the same argument and a caller cannot pass it to three of four.
     """
     vote = VotingClassifier(list(members), voting="soft", weights=weights)
@@ -304,7 +304,7 @@ def prefit_stack(
     ``CalibratedClassifierCV(cv='prefit')``, which was removed in scikit-learn
     1.9, this one exists and is not deprecated. It does not refit the members,
     and ``fit(X, y, sample_weight=w)`` forwards the weight to the final
-    estimator — so D-4's tie encoding reaches the meta-learner, and with
+    estimator - so D-4's tie encoding reaches the meta-learner, and with
     ``weight`` set so does Phase 7's recency decay.
     """
     stack = StackingClassifier(list(members), final_estimator=_meta_learner(), cv="prefit")
@@ -314,7 +314,7 @@ def prefit_stack(
 
 
 class TimeSeriesStack(ClassifierMixin, BaseEstimator):
-    """Forward-chained out-of-fold stacking — the spec's variant, hand-rolled.
+    """Forward-chained out-of-fold stacking - the spec's variant, hand-rolled.
 
     `StackingClassifier` cannot take a `TimeSeriesSplit` (see the module
     docstring), so the meta-feature matrix is built here: for each forward-
@@ -330,7 +330,7 @@ class TimeSeriesStack(ClassifierMixin, BaseEstimator):
 
     Unfitted on construction, so :func:`~nflpred.modeling.base.fit_calibrated` fits it
     on 2006-2015 and sigmoid-calibrates it on 2016-2018 like any other
-    estimator — no second fit path exists for the ensemble.
+    estimator - no second fit path exists for the ensemble.
     """
 
     def __init__(
@@ -393,7 +393,7 @@ def oof_stack(
     """An **unfitted** spec-literal stack, for :func:`fit_calibrated` to fit.
 
     ``features`` selects the members' frozen hyperparameters (D-16), not their
-    columns — the members always read the first 16 columns of the ensemble
+    columns - the members always read the first 16 columns of the ensemble
     matrix. Elo joins as a parameter-free :class:`EloMember`, which needs no
     refitting-twin because there is nothing in it to refit.
     """
@@ -412,7 +412,7 @@ def meta_coefficients(stack: StackingClassifier | TimeSeriesStack) -> dict[str, 
     """The meta-learner's weight per member, in :data:`MEMBER_ORDER`.
 
     Phase 6 treats these as authoritative for combining per-model SHAP values,
-    which is what closes the spec's "ensemble weight ownership" open question —
+    which is what closes the spec's "ensemble weight ownership" open question -
     so they are printed at the checkpoint rather than left inside a pickle.
     """
     names = [name for name, _ in stack.estimators]
@@ -441,7 +441,7 @@ def predict_records(
     """The spec's per-game record, minus the ``explanation`` key Phase 6 adds.
 
     ``agreement`` counts members whose *pick* matches the ensemble's, which is
-    the spec's "5 of 6 models agree" and deliberately not a probability spread —
+    the spec's "5 of 6 models agree" and deliberately not a probability spread -
     the spread is reported separately as the correlation diagnostic. A game at
     exactly 0.500 is a home pick, matching the threshold
     :func:`~nflpred.evaluate.accuracy` scores on.

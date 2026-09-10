@@ -1,16 +1,16 @@
 """Phase 5 checkpoint: does combining the five estimators buy anything?
 
-Phase 4's answer to "which estimator is best" was "it barely matters" — 0.0079
+Phase 4's answer to "which estimator is best" was "it barely matters" - 0.0079
 of log loss across ten fitted models, none clearing the Phase 3 bar. Phase 5 is
 the spec's follow-up: soft voting, then stacking, against the best single model.
-The spec is explicit about the failure case — *if the ensemble does not beat it,
-say so plainly rather than tuning until it does* — so this script reports a
+The spec is explicit about the failure case - *if the ensemble does not beat it,
+say so plainly rather than tuning until it does* - so this script reports a
 comparison rather than searching for a winner.
 
 Five ensembles are measured, differing in exactly one thing each:
 
     soft vote (6)        equal-weight mean of all six members
-    soft vote (5)        the same without Elo — the control isolating Elo
+    soft vote (5)        the same without Elo - the control isolating Elo
     stack A              prefit, **uncalibrated** members, meta-learner on calib
     stack B              prefit, **calibrated** members, meta-learner on calib
     stack C              spec-literal out-of-fold stack on train, sigmoid on calib
@@ -26,7 +26,7 @@ seasons. Three candidates is a small search and the cost is bounded, but it is
 real, and the eventual test-split reading has to be read knowing it. See D-19.
 
 Everything refits from the factory (D-17); nothing is loaded. Feature set is
-`CORE_FEATURES` plus Elo's probability column — the feature-count question was
+`CORE_FEATURES` plus Elo's probability column - the feature-count question was
 settled at Phase 4 and no ensemble here is built on 29 columns. Validation is
 scored, never fitted. Test is not read.
 
@@ -114,7 +114,7 @@ STACK_C = "stack C (out-of-fold, then sigmoid)"
 #: spec wants the meta-learner's coefficients used as SHAP-combination weights,
 #: and stack C gives lightgbm **-0.578**, which would flip the sign of every
 #: factor that member contributes. Stack A's six coefficients are all positive
-#: and its members are prefit rather than refitted per fold — the "cleanest
+#: and its members are prefit rather than refitted per fold - the "cleanest
 #: construction" D-19 already identified while choosing the other one on a
 #: 0.0001 log-loss difference it also called noise.
 HEADLINE_STACK = STACK_A
@@ -234,7 +234,7 @@ def main() -> None:
 
     print(
         f"\nheadline stack: {headline_label}  (pinned on construction, not on the "
-        f"validation number — see D-22)"
+        f"validation number - see D-22)"
     )
     print(
         "  Its six meta-learner coefficients are all positive, where stack C gives "
@@ -269,7 +269,7 @@ def main() -> None:
     path = reliability_diagram(
         plotted,
         report_path("phase5_ensemble_reliability.png"),
-        title=f"Phase 5 ensemble — validation {VAL_SEASONS[0]}-{VAL_SEASONS[1]}",
+        title=f"Phase 5 ensemble - validation {VAL_SEASONS[0]}-{VAL_SEASONS[1]}",
     )
     report_written(path)
 
@@ -295,7 +295,7 @@ def _correlation(probabilities: dict[str, np.ndarray]) -> None:
     The explanation for whatever the headline number turns out to be, in either
     direction. Averaging six probabilities that correlate at 0.95+ is close to a
     shrink toward their mean, and no meta-learner can extract a diversity that
-    is not there — so this table is reported whatever it says.
+    is not there - so this table is reported whatever it says.
     """
     names = list(probabilities)
     matrix = np.corrcoef(np.vstack([probabilities[n] for n in names]))
@@ -335,7 +335,7 @@ def _coefficients(stacks: dict[str, ClassifierMixin]) -> None:
     ]
     print(
         "  negative weights: " + ("; ".join(negative) if negative else "none")
-        + "  — a negative weight means the meta-learner reads that member as a contrarian signal."
+        + "  - a negative weight means the meta-learner reads that member as a contrarian signal."
     )
 
 
@@ -371,8 +371,8 @@ def _by_agreement(
     print(f"\nby model agreement ({frame.height:,} validation games):")
     print(pl.DataFrame(rows))
     print(
-        "  Votes are the canonical six — the five calibrated estimators plus Platt-scaled "
-        "Elo — which is what the output contract reports, whichever variant the\n"
+        "  Votes are the canonical six - the five calibrated estimators plus Platt-scaled "
+        "Elo - which is what the output contract reports, whichever variant the\n"
         "  headline stack turns out to be. A stack holding uncalibrated members can "
         "therefore land on the other side of 0.50 from most of them (D-18 shifts a\n"
         "  sigmoid-calibrated probability up by ~0.015), which is what the low-agreement "

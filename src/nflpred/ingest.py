@@ -10,7 +10,7 @@ phase invalidates the affected files instead of silently serving a narrower
 frame that fails much further downstream.
 
 Freshness rule: a season below :data:`~nflpred.config.LIVE_SEASON` is complete and
-therefore immutable — never re-fetched once cached. The live season and the
+therefore immutable - never re-fetched once cached. The live season and the
 schedule file are re-fetched once they age past their TTL.
 
 Run directly to populate the cache::
@@ -178,7 +178,7 @@ def _load_season(
 ) -> pl.DataFrame | None:
     """Pull one season, returning ``None`` when the live one is not published.
 
-    Before week 1 the live season has a schedule and nothing else — nflverse
+    Before week 1 the live season has a schedule and nothing else - nflverse
     either serves an empty frame or 404s, depending on the file. Neither is an
     error: it is the ordinary August state, and the only season it can happen
     for is the one being predicted. Any other season failing is a real failure
@@ -192,7 +192,7 @@ def _load_season(
     """
     try:
         frame = load()
-    except Exception as error:  # noqa: BLE001 — re-raised below unless live
+    except Exception as error:  # noqa: BLE001 - re-raised below unless live
         if season < LIVE_SEASON:
             raise
         print(f"  {label} {season}: not published yet ({type(error).__name__}); skipped")
@@ -243,7 +243,7 @@ def ingest_pbp(seasons: Iterable[int], *, force: bool = False) -> None:
 def ingest_team_stats(seasons: Iterable[int], *, force: bool = False) -> None:
     """Cache weekly team stats.
 
-    Not a feature source — this is nflverse's own team-game aggregation, kept
+    Not a feature source - this is nflverse's own team-game aggregation, kept
     so Phase 1 can reconcile our play-by-play rollup against an independent
     implementation.
     """
@@ -353,7 +353,7 @@ def _cached_paths(
     A missing completed season is a broken cache and raises. A missing live
     season is the ordinary state of affairs between February and September:
     nflverse publishes the schedule long before the first snap, and the live
-    season's play-by-play file does not exist — or exists and is empty — until
+    season's play-by-play file does not exist - or exists and is empty - until
     week 1 kicks off. Warning and skipping is what lets
     ``python -m nflpred.predict --season 2026 --week 1`` work in August, which is
     the whole point of extending :data:`~nflpred.config.INGEST_SEASONS` to it.
@@ -367,7 +367,7 @@ def _cached_paths(
             keep.append(path)
         elif season >= LIVE_SEASON:
             warnings.warn(
-                f"{label} {season}: no rows cached yet — the live season has not "
+                f"{label} {season}: no rows cached yet - the live season has not "
                 f"started. Skipping it; every feature it needs comes from prior "
                 f"seasons and the schedule.",
                 stacklevel=3,

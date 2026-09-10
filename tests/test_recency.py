@@ -9,14 +9,14 @@ strictly decreasing, never zero.
 
 **``None`` is the same code path.** The unweighted control has to be the
 identical fit with a flat weight vector, not a fit that skipped the
-``sample_weight`` argument — otherwise the tuning grid's ``None`` cell would be
+``sample_weight`` argument - otherwise the tuning grid's ``None`` cell would be
 measuring two differences at once. Pinned by comparing predictions bit for bit.
 
 **Weights compose by multiplication.** D-4 encodes a tie as two half-weight
 rows and D-14 confirmed it; both took for granted that an outer weight would
 multiply cleanly through :func:`~nflpred.evaluate.expand_ties`. Phase 7 is the first
 thing to actually pass an outer weight, so a tie inside a recency window is
-checked here rather than assumed — a tie at recency *r* must carry ``0.5 * r``,
+checked here rather than assumed - a tie at recency *r* must carry ``0.5 * r``,
 twice, and contribute exactly *r* of total weight.
 """
 
@@ -90,7 +90,7 @@ def test_matrix_league_week_is_a_dense_chronological_index(matrix):
     assert weeks.select("season", "week").equals(
         weeks.select("season", "week").sort("season", "week")
     )
-    # And the offseason is not counted — the last week of a season and the first
+    # And the offseason is not counted - the last week of a season and the first
     # of the next are one step apart, not thirty.
     boundaries = weeks.filter(pl.col("week") == 1)
     assert boundaries.height == matrix["season"].n_unique()
@@ -153,7 +153,7 @@ def test_a_tie_carries_half_the_recency_weight(splits):
     """D-14's stated assumption, exercised for the first time.
 
     A tie is two rows at half weight (D-4). Under recency weighting those two
-    rows must carry ``0.5 * r`` each, not 0.5 and not *r* — the two mechanisms
+    rows must carry ``0.5 * r`` each, not 0.5 and not *r* - the two mechanisms
     multiply, and if they did not, a tie in a recent week would count as two
     whole games or a recent game would count as an old one.
     """

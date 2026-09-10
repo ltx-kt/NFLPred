@@ -6,7 +6,7 @@ wrong:
 
 **Members that get refitted.** The whole design rests on `PrefitMember.fit`
 being a no-op and `__sklearn_clone__` returning ``self``. If either broke, both
-meta-estimators would refit the members on the calibration split — quietly, with
+meta-estimators would refit the members on the calibration split - quietly, with
 no error, producing an ensemble whose bases saw 2016-2018 and whose numbers
 would look slightly *better*. So every member's validation predictions are
 compared before and after each ensemble fit.
@@ -18,7 +18,7 @@ probability from the wrong columns.
 **Weights that stop at the meta-learner.** D-4 rides `sample_weight` into
 `StackingClassifier.fit`, and sklearn is free to drop it.
 
-Runs against the real feature matrix, like `tests/test_models.py` — a synthetic
+Runs against the real feature matrix, like `tests/test_models.py` - a synthetic
 frame would not exercise the splits, the ties or the 17-column layout.
 """
 
@@ -191,7 +191,7 @@ def test_tie_weights_reach_the_meta_learner(members, splits):
 
     assert not np.allclose(baseline, np.asarray(skewed.final_estimator_.coef_).ravel()), (
         "the meta-learner's coefficients did not move under a 1000x weight "
-        "imbalance — sample_weight is being dropped, and D-4's tie encoding "
+        "imbalance - sample_weight is being dropped, and D-4's tie encoding "
         "never reaches the stack."
     )
 
@@ -229,7 +229,7 @@ def test_oof_stack_drops_only_the_earliest_block(matrix, splits):
 def test_ensembles_ignore_the_held_out_split(matrix, splits):
     """Runtime half: poison every held-out row and nothing moves.
 
-    Stronger than reading the code — it would catch a join, a global mean, or a
+    Stronger than reading the code - it would catch a join, a global mean, or a
     scaler that pulled the whole matrix in without asking for a split.
     """
     _, _, val = splits
@@ -278,7 +278,7 @@ def _headline_probabilities(source: pl.DataFrame, val: pl.DataFrame) -> np.ndarr
 
 
 def test_store_round_trips_an_ensemble(members, matrix, splits, tmp_path):
-    """`src/nflpred/modeling/store.py` needed no edits — that is what this proves.
+    """`src/nflpred/modeling/store.py` needed no edits - that is what this proves.
 
     The 17-column feature tuple is the reason: an ensemble is a
     ``predict_proba``-shaped object over `ENSEMBLE_FEATURES` like any other

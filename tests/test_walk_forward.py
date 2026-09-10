@@ -3,7 +3,7 @@
 Phase 7 is the first code in the project permitted to name the test split
 (D-29), so the AST guard that `test_models.py`, `test_ensemble.py` and
 `test_explanations.py` put over their phase scripts is deliberately **not**
-extended here — the harness has to be able to walk 2022-2025, and a guard that
+extended here - the harness has to be able to walk 2022-2025, and a guard that
 forbade the string would forbid the deliverable.
 
 What replaces it is stronger anyway, and is the same shape as
@@ -16,7 +16,7 @@ whole matrix in.
 
 Alongside it, the chronology claim directly: the most recent game either fitted
 window saw is strictly earlier than the target week's first kickoff. Cut by
-``gameday``, never by week number — a Thursday game and the Monday game after it
+``gameday``, never by week number - a Thursday game and the Monday game after it
 are the same "week" and eleven days apart.
 
 These run against the real matrix. A synthetic frame would not exercise byes,
@@ -46,7 +46,7 @@ pytestmark = pytest.mark.data
 
 #: One validation season, walked in full. Chosen rather than sampled so a
 #: failure is reproducible, and 2019 because it is the first season after the
-#: frozen calibration split — the boundary where the rolling window first has to
+#: frozen calibration split - the boundary where the rolling window first has to
 #: move off D-5's fixed seasons.
 SAMPLE_SEASON: int = 2019
 
@@ -91,7 +91,7 @@ def test_the_windows_grow_and_never_overlap(season_walk):
     assert all(t < c for t, c in zip(train_last, calib_first, strict=True))
     assert weeks["n_train"].to_list() == sorted(weeks["n_train"].to_list())
     assert weeks["n_calib"].max() > weeks["n_calib"].min(), (
-        "the calibration window never grew — it is not rolling"
+        "the calibration window never grew - it is not rolling"
     )
 
 
@@ -176,8 +176,8 @@ def test_poisoning_the_target_week_and_after_changes_nothing(matrix, poison_targ
     """D-29's replacement for the AST guard.
 
     Every feature and every result from the target week onward becomes garbage.
-    A harness that reached forward — by a join, a global mean, a scaler fitted
-    on the whole matrix, or a week cut by number rather than by kickoff — would
+    A harness that reached forward - by a join, a global mean, a scaler fitted
+    on the whole matrix, or a week cut by number rather than by kickoff - would
     move. This one must not move at all, to the last bit.
     """
     league_week = int(poison_target["league_week"])
@@ -193,7 +193,7 @@ def test_poisoning_the_target_week_and_after_changes_nothing(matrix, poison_targ
         _predict_target(poisoned, clean_target, poison_target),
         err_msg=(
             "the target week's predictions moved when games at and after it were "
-            "rewritten — the harness is fitting on games that had not kicked off"
+            "rewritten - the harness is fitting on games that had not kicked off"
         ),
     )
 
@@ -201,7 +201,7 @@ def test_poisoning_the_target_week_and_after_changes_nothing(matrix, poison_targ
 def test_poisoning_before_the_target_week_does_change_things(matrix, poison_target):
     """Guards the test above from passing vacuously.
 
-    Poisons the *earlier* rows instead — the ones the harness is supposed to be
+    Poisons the *earlier* rows instead - the ones the harness is supposed to be
     fitting on. Features rather than results, so both classes survive; and only
     the 20 league weeks immediately before the target, because rewriting every
     completed row would leave every column constant and the estimators would

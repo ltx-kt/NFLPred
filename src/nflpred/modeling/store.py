@@ -84,7 +84,7 @@ def save_models(
 ) -> Path:
     """Write ``models`` under ``root/key`` with a manifest, and return that path.
 
-    ``key`` names the run — the checkpoint uses the feature set, so
+    ``key`` names the run - the checkpoint uses the feature set, so
     ``models/core16/`` and ``models/phase3_29/`` sit side by side rather than
     overwriting each other. Anything already there is replaced: these are
     outputs of the current definitions, and a directory holding two generations
@@ -125,7 +125,7 @@ def load_models(
     """Load a saved run and verify it still predicts what it did when saved.
 
     Returns ``(models, manifest)``. Raises if a file or the manifest is missing,
-    or if any model's recomputed fingerprint disagrees with the recorded one —
+    or if any model's recomputed fingerprint disagrees with the recorded one -
     loudly, because a silently-wrong model is the failure mode that would
     quietly poison every number downstream of it.
 
@@ -136,7 +136,7 @@ def load_models(
     directory = root / key
     manifest_path = directory / MANIFEST_NAME
     if not manifest_path.exists():
-        msg = f"no manifest at {manifest_path}. Refit and save — artifacts are outputs (D-17)."
+        msg = f"no manifest at {manifest_path}. Refit and save - artifacts are outputs (D-17)."
         raise FileNotFoundError(msg)
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -185,7 +185,7 @@ def load_models(
 
     if mismatched:
         msg = (
-            f"prediction fingerprint mismatch in {directory} — the loaded models do "
+            f"prediction fingerprint mismatch in {directory} - the loaded models do "
             f"not predict what was saved:\n" + "\n".join(mismatched) + "\n"
             f"Either the feature matrix changed under them (manifest hash "
             f"{manifest.get('matrix_sha256_16')}) or the artifacts are stale. "

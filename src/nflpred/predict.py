@@ -1,13 +1,13 @@
 """The weekly run: build one week, refit, predict, explain, log.
 
 Everything before this module reads a matrix in which every game has already
-been played. This is the module that does not — the 2026 season has a schedule
+been played. This is the module that does not - the 2026 season has a schedule
 and no results, and a fixture that has not kicked off produces no row from
 :func:`nflpred.features.pbp_agg._spine`, which filters to games with scores.
 
 **The synthesis, and why it is one row per team (D-27).** Rather than widening
-the spine to admit unplayed games — which would put null-result rows into every
-table the project builds, including the ones the leak tests audit — the target
+the spine to admit unplayed games - which would put null-result rows into every
+table the project builds, including the ones the leak tests audit - the target
 week's scheduled games are turned into team-game rows with every statistic and
 ``won`` null, concatenated onto the completed table, and pushed through the
 **existing** ``build_rolling`` / ``build_qb`` / ``build_elo`` / ``build_features``
@@ -15,7 +15,7 @@ pipeline unchanged. Three properties make that safe, and each is checked rather
 than asserted in prose:
 
 * Every rolling expression is ``shift(1)``ed, and the synthesized row is the
-  **last** row of its team's series, so no null ever enters a window — the row
+  **last** row of its team's series, so no null ever enters a window - the row
   reads the same eight completed games it would have read anyway, and no other
   row can see it.
 * Elo already yields pre-game ratings for scoreless games and skips the update
@@ -25,7 +25,7 @@ than asserted in prose:
 
 `tests/test_predict.py` takes a **completed** week, rebuilds it as if unplayed,
 and demands the feature row come back identical. That is train/serve skew
-measured rather than argued — and it is how D-31's quarterback-form skew was
+measured rather than argued - and it is how D-31's quarterback-form skew was
 found, since the composite failed exactly that test before it was fixed.
 
 **Documented limit.** Only a team's *next* unplayed week is buildable. Asking
@@ -127,7 +127,7 @@ def _synthesized_rows(week_schedule: pl.DataFrame, template: pl.DataFrame) -> pl
     Mirrors :func:`nflpred.features.pbp_agg._spine`'s output shape rather than
     calling it, because that function's job is to *exclude* these games. The
     template supplies dtypes so the concatenation below is a plain vertical
-    one — a diagonal concat would paper over a column this forgot to fill.
+    one - a diagonal concat would paper over a column this forgot to fill.
     """
     shared = (
         pl.col("game_id"),
@@ -188,7 +188,7 @@ def week_frame(
     """The feature rows for one week, whether or not it has been played.
 
     A week with results is a slice of the built matrix. A week without them is
-    synthesized first — but through the *same* ``build_features`` call, so there
+    synthesized first - but through the *same* ``build_features`` call, so there
     is one construction of a feature row in the project and not two. A week that
     is half played (a Thursday game done, the Sunday slate not) synthesizes only
     the games that are missing, which falls out of the same code.
@@ -241,7 +241,7 @@ def week_frame(
         msg = (
             f"{season} week {week} has null features {missing}. Every rolling window "
             f"is shift(1)ed and the synthesized row is last in its team's series, so "
-            f"a null here means that invariant broke — investigate before predicting."
+            f"a null here means that invariant broke - investigate before predicting."
         )
         raise ValueError(msg)
 
@@ -295,7 +295,7 @@ def predict_week(
     D-30 leaves native model formats deferred for exactly this reason: there is
     nothing to reload *to*. ``--explain`` needs the raw inner estimators and the
     stack's ``final_estimator_``, and `nflpred.modeling.store.load_models` could not
-    supply them anyway — its fingerprint recompute requires a matrix that still
+    supply them anyway - its fingerprint recompute requires a matrix that still
     contains the 2019-2021 validation rows, which a live 2026 matrix does not
     single out.
     """
@@ -480,12 +480,12 @@ def _report(args: argparse.Namespace) -> None:
     )
     print(f"  configurations in the log: {', '.join(suffixes) or 'none'}")
     print(
-        f"  reporting on {current} only — pooling two configurations' predictions on "
+        f"  reporting on {current} only - pooling two configurations' predictions on "
         f"the same games would score a model that never existed."
     )
     if overall.is_empty():
         print(
-            "  nothing settled for this configuration yet — run "
+            "  nothing settled for this configuration yet - run "
             "`python -m nflpred.predict --settle`, or pass --config to pick another."
         )
         return
@@ -500,7 +500,7 @@ def _report(args: argparse.Namespace) -> None:
             f"{args.window} settled weeks, so the trailing window covers all of them."
         )
     print(
-        "  Reported, never fed back into the ensemble weights — the members correlate "
+        "  Reported, never fed back into the ensemble weights - the members correlate "
         "at 0.959 and every weighting scheme lands within 0.0006 of every other, so\n"
         "  re-deriving weights weekly from a handful of games would be fitting noise "
         "on a flat surface. This is a monitoring signal (spec in-season item 3)."

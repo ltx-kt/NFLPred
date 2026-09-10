@@ -14,7 +14,7 @@ Three rules keep this auditable rather than a moving target:
 * **Folds are time-ordered.** ``TimeSeriesSplit`` runs over the *unexpanded*
   game rows in kickoff order, and D-4's tie expansion happens inside each fold.
   Expanding first would reorder the rows and hand the splitter a shuffled
-  series — the exact thing constraint 2 forbids.
+  series - the exact thing constraint 2 forbids.
 * **The grid is not re-searched at a checkpoint.** Its output is quoted in
   ``src/nflpred/config.py``. This script exists so that comment can be reproduced.
 
@@ -52,7 +52,7 @@ pl.Config.set_tbl_width_chars(140)
 #: meaningful sample of NFL weeks.
 N_SPLITS: int = 5
 
-#: The grids. Deliberately small — at most 24 cells each, with the tree count
+#: The grids. Deliberately small - at most 24 cells each, with the tree count
 #: *fixed* and learning rate, depth and leaf size varied. On 2,670 games the
 #: number of trees is not the interesting axis; how much each one is allowed to
 #: say is. Fixing it also keeps this script minutes rather than hours.
@@ -60,7 +60,7 @@ N_SPLITS: int = 5
 #: These were re-centred **once**, before anything was frozen. The first pass
 #: gridded the three boosters over ``learning_rate ∈ {0.01, 0.03, 0.05}`` and
 #: depths ``{2, 3, 4}`` / ``{4, 8, 16}`` leaves, and every winner landed on the
-#: lowest-capacity corner with loss rising monotonically away from it — a grid
+#: lowest-capacity corner with loss rising monotonically away from it - a grid
 #: reporting that its own optimum is outside itself. The ranges below extend
 #: downward to bracket it. Freezing a boundary winner would have been freezing
 #: the edge of the search rather than a measured choice.
@@ -114,8 +114,8 @@ def _cv_log_loss(
     """Mean held-out log loss over the time-ordered folds.
 
     Each fold refits from scratch. The calibrator is *not* fitted here: this
-    grid chooses a base estimator, and 2016-2018 — the split the calibrator
-    owns — is not in scope (D-5).
+    grid chooses a base estimator, and 2016-2018 - the split the calibrator
+    owns - is not in scope (D-5).
     """
     splitter = TimeSeriesSplit(n_splits=N_SPLITS)
     scores = []
@@ -163,7 +163,7 @@ def main() -> None:
     train = split_frame(pl.read_parquet(FEATURE_MATRIX_PATH), "train")
 
     print(
-        f"Hyperparameter grids — {N_SPLITS}-fold TimeSeriesSplit inside "
+        f"Hyperparameter grids - {N_SPLITS}-fold TimeSeriesSplit inside "
         f"{TRAIN_SEASONS[0]}-{TRAIN_SEASONS[1]} only ({train.height:,} games). "
         f"Calibration, validation and test are not read.\n"
     )

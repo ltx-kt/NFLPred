@@ -6,7 +6,7 @@ Two properties carry the whole module:
   which is what makes the definition identical at train and serve time;
 * a quarterback's rolling form for game *N* excludes game *N*.
 
-Everything else — the backup flag, the unknown flag — is bookkeeping on top of
+Everything else - the backup flag, the unknown flag - is bookkeeping on top of
 those two. The backup flag does get its own test, because its whole value is
 that it fires on the week *after* a change rather than during it, and that is
 exactly the kind of off-by-one a passing type check would never catch.
@@ -93,14 +93,14 @@ def test_projected_starter_is_never_this_games_own_starter_by_construction(
     """When a team changes quarterback, the projection must be the *old* one.
 
     If the projection were reading this game's starter, these rows would not
-    exist at all — so their existence is the check.
+    exist at all - so their existence is the check.
     """
     joined = qb.join(
         starters.select("game_id", "team", "actual_qb"), on=["game_id", "team"], how="inner"
     ).filter(pl.col("projected_qb").is_not_null())
 
     changes = joined.filter(pl.col("projected_qb") != pl.col("actual_qb"))
-    assert changes.height > 500, "no QB changes found — the join is probably wrong"
+    assert changes.height > 500, "no QB changes found - the join is probably wrong"
 
 
 # ------------------------------------------------------------------- form
@@ -193,7 +193,7 @@ def test_backup_flag_fires_the_week_after_a_change_not_during_it(
 ):
     """The 2008 Patriots: Brady hurt in week 1, Cassel from week 2 on.
 
-    Week 1's projection is still Brady — the flag must be *off*, because at
+    Week 1's projection is still Brady - the flag must be *off*, because at
     kickoff nobody knew. Week 2's projection is Cassel and the flag is on.
     """
     season = qb.filter((pl.col("team") == "NE") & (pl.col("season") == 2008)).sort("week")
@@ -237,8 +237,8 @@ def test_unknown_form_is_structurally_dead_in_the_matrix_era(matrix_era: pl.Data
     The projected starter *is* whoever started the team's previous game, so once
     the as-of join reads his form **through** that start (rather than up to the
     one before it), he always has at least one start behind him. The flag can
-    therefore only fire where a team has no previous game at all — 1999 week 1,
-    and Houston's 2002 expansion — which is outside the matrix by D-2.
+    therefore only fire where a team has no previous game at all - 1999 week 1,
+    and Houston's 2002 expansion - which is outside the matrix by D-2.
 
     It joins the two flags D-24 already found structurally dead. The driver in
     `nflpred.explain.confidence_drivers` is **kept** rather than removed, for D-24's

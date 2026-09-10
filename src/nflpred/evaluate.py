@@ -8,8 +8,8 @@ re-derived per phase.
 Two things this module is careful about.
 
 **Ties.** The target is a float in {0, 0.5, 1} (D-4). Rather than special-casing
-each metric, a tie row is expanded into two half-weight rows — ``y=1`` and
-``y=0`` — and every metric is computed on the weighted expansion. Under log loss
+each metric, a tie row is expanded into two half-weight rows - ``y=1`` and
+``y=0`` - and every metric is computed on the weighted expansion. Under log loss
 and Brier that is exactly right, and it gives a tie half credit on accuracy for
 free. :func:`expand_ties` is also what the training path uses, so the model and
 the scoreboard agree on what a tie is.
@@ -152,7 +152,7 @@ def halt_if_suspicious(
     """Raise if any model in ``table`` scored above the accuracy ceiling.
 
     Constraint 3's tripwire, executable. It raises rather than warns because the
-    failure mode it guards against is a leak that reads as a triumph — and the
+    failure mode it guards against is a leak that reads as a triumph - and the
     one thing that must not happen is that number being reported. The caller
     should print the table first, so the evidence is visible above the traceback.
 
@@ -160,7 +160,7 @@ def halt_if_suspicious(
     :func:`metrics_table`. When given, the check runs on the *unrounded*
     accuracy: ``metrics_table`` rounds to four places for display, so a genuine
     0.72004 shows as 0.7200 and a ``pl.col("accuracy") > 0.72`` test would let it
-    through — the tripwire rounding in the leak's favour. Without ``entries`` the
+    through - the tripwire rounding in the leak's favour. Without ``entries`` the
     check falls back to the rounded ``table["accuracy"]`` column, which is enough
     for a hand-built table in a test.
     """
@@ -182,7 +182,7 @@ def halt_if_suspicious(
     names = ", ".join(suspicious["model"].to_list())
     msg = (
         f"Halted: {names} scored above {ceiling:.0%} accuracy on a time-ordered "
-        f"split. Vegas hits 66-68%. This is a leak, not a result — investigate "
+        f"split. Vegas hits 66-68%. This is a leak, not a result - investigate "
         f"before reporting anything above."
     )
     raise SystemExit(msg)
@@ -197,7 +197,7 @@ def always_home(n: int, home_win_rate: float) -> np.ndarray:
     Picking the home team every week is the trivial baseline. Emitting the
     *rate* rather than 1.0 keeps its log loss finite, and since the constant is
     above 0.5 the accuracy is identical to a hard always-home rule. The rate
-    must come from training seasons only — reading it off the evaluation set
+    must come from training seasons only - reading it off the evaluation set
     would be a (small) leak.
     """
     return np.full(n, float(home_win_rate))
@@ -217,7 +217,7 @@ def market_probability(home_ml: np.ndarray, away_ml: np.ndarray) -> np.ndarray:
 
     Proportional (normalised) de-vigging: the two implied probabilities sum to
     slightly more than 1, and the excess is removed pro rata. Cruder than
-    Shin's method, and close enough — this is a reference line, not a model.
+    Shin's method, and close enough - this is a reference line, not a model.
     Games without a quoted line come back as NaN and are dropped by
     :func:`metrics_table`.
     """

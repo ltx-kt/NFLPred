@@ -1,7 +1,7 @@
 """The explanation layer, and the claims that would be wrong *and* convincing.
 
 An attribution bug does not crash. It produces a fluent, confident paragraph
-that is backwards — which is strictly worse than no explanation, because a user
+that is backwards - which is strictly worse than no explanation, because a user
 cannot tell the difference by reading it. So this file is aimed at the failures
 that survive inspection:
 
@@ -22,7 +22,7 @@ the prose names the wrong team, fluently, forever.
 **A causal claim.** SHAP describes what the model weights, never what wins games.
 
 Runs against the real feature matrix and the real fitted models, like
-`tests/test_ensemble.py` — a synthetic frame would exercise none of the library
+`tests/test_ensemble.py` - a synthetic frame would exercise none of the library
 shape differences that :func:`~nflpred.explain._normalise` exists to absorb.
 """
 
@@ -67,7 +67,7 @@ from nflpred.modeling.ensemble import (
 )
 
 #: The ensemble total reconciles at the float round-trip through sigmoid and
-#: back — measured at 1.4e-07 across all 821 validation games — not at machine
+#: back - measured at 1.4e-07 across all 821 validation games - not at machine
 #: epsilon. Asserting 1e-9 here would be asserting something untrue about
 #: floating point rather than something true about the method.
 ENSEMBLE_ATOL = 1e-6
@@ -75,7 +75,7 @@ ENSEMBLE_ATOL = 1e-6
 
 @pytest.fixture(scope="module")
 def fitted(models: dict, splits) -> dict:
-    """Stack A and its raw members — the headline, and the objects to explain."""
+    """Stack A and its raw members - the headline, and the objects to explain."""
     train, calib, _ = splits
     raw = {name: inner_estimator(model) for name, model in models.items()}
     stack = prefit_stack(build_members(raw), calib)
@@ -118,7 +118,7 @@ def test_each_member_sums_to_its_own_raw_output(name, fitted, attributed):
 
     The spec's first validation requirement, per model. A member that fails is
     almost always an explainer built on the calibrated wrapper rather than on
-    `inner_estimator`'s output — which would still produce plausible numbers.
+    `inner_estimator`'s output - which would still produce plausible numbers.
     """
     attribution = attributed["attributions"][name]
     target = reference(name, fitted["raw"][name], attributed["x"][:, : len(CORE_FEATURES)])
@@ -132,7 +132,7 @@ def test_each_member_sums_to_its_own_raw_output(name, fitted, attributed):
 
 
 def test_elo_attribution_is_the_rating_itself(attributed, splits):
-    """Elo needs no explainer — the rating *is* the explanation."""
+    """Elo needs no explainer - the rating *is* the explanation."""
     _, _, val = splits
     attribution = attributed["attributions"][ELO_MEMBER]
     assert attribution.space == PROBABILITY
@@ -157,7 +157,7 @@ def test_the_ensemble_total_reconciles_exactly(fitted, attributed, sample):
     """`sum_j contribution_j == logit(p_ensemble) - base_logit`.
 
     The secant identity. This is what makes the combination exact rather than a
-    Taylor approximation with an error bar — the naive `p(1-p)` slope misses by
+    Taylor approximation with an error bar - the naive `p(1-p)` slope misses by
     up to 0.43 in log-odds on this data, concentrated in exactly the confident
     games a user cares about.
     """
@@ -204,7 +204,7 @@ def test_glossary_entries_are_well_formed():
         assert feature.kind in {"diff", "flag", "level"}, name
         assert feature.plain and not feature.plain.endswith("."), name
         assert feature.unit in {"flag", *_FORMATS}, name
-        # No schema-shaped token. Not "the column name is absent" — `wind` is
+        # No schema-shaped token. Not "the column name is absent" - `wind` is
         # both a column and an ordinary English word, and banning it would force
         # a worse phrase to satisfy a test rather than a reader.
         assert "_" not in feature.plain, name
@@ -246,7 +246,7 @@ def test_sign_conventions_put_a_fired_flag_on_the_right_side():
     A backup starting for the *away* team should read as helping the home team
     and a backup starting for the *home* team as hurting it. Driven off
     hand-built contributions rather than a fitted model, so it tests the
-    glossary and the ranking, which is what a sign error lives in — not whether
+    glossary and the ranking, which is what a sign error lives in - not whether
     the boosters happened to learn the right direction this week.
     """
     row = dict.fromkeys(ENSEMBLE_FEATURES, 0.0)
@@ -319,7 +319,7 @@ def _strings(node) -> list[str]:
 
 def test_no_narrative_makes_a_causal_claim(explained):
     """SHAP describes model behaviour. "The model weights X heavily", never
-    "X causes wins" — the spec is explicit and the template must not drift."""
+    "X causes wins" - the spec is explicit and the template must not drift."""
     for record in explained:
         for text in _strings(record["explanation"]):
             lowered = text.lower()
@@ -347,7 +347,7 @@ def test_a_no_read_game_refuses_to_explain_itself(explained):
         for r in explained
         if abs(r["ensemble"]["home_win_prob"] - 0.5) < NO_READ_EDGE
     ]
-    assert no_read, "no near-coin-flip games in the sample — the constraint is untested"
+    assert no_read, "no near-coin-flip games in the sample - the constraint is untested"
 
     for record in no_read:
         explanation = record["explanation"]
@@ -424,7 +424,7 @@ def test_per_game_reconciliation_is_reported_and_tiny(explained):
 # ------------------------------------------------------------ determinism
 
 def test_the_same_game_explains_identically_twice(fitted, sample):
-    """Template-based and deterministic, per the spec — no LLM, and no RNG.
+    """Template-based and deterministic, per the spec - no LLM, and no RNG.
 
     The live risk is `feature_perturbation="interventional"`, which sub-samples
     a background set and would make the same game explain differently from week

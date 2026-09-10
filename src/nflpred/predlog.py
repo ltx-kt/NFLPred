@@ -13,7 +13,7 @@ scans.
 Four tables, and the split between them is the point:
 
 ``runs``
-    One row per ``model_version`` — the *config*. Train and calibration ranges,
+    One row per ``model_version`` - the *config*. Train and calibration ranges,
     row counts, half-life, feature tuple, matrix hash, library versions,
     meta-learner coefficients. D-30 leaves native model formats deferred and
     makes this row the reproducibility record instead: the harness refits per
@@ -22,7 +22,7 @@ Four tables, and the split between them is the point:
 ``predictions``
     One row per ``(game_id, model_version)``, upserted, so rerunning a week is
     idempotent rather than additive. Carries the flat fields a query wants and
-    the full output-contract record as JSON alongside — the JSON is the
+    the full output-contract record as JSON alongside - the JSON is the
     deliverable, the columns are what makes the log answerable.
 ``member_predictions``
     Each member's probability, flat. The spec's in-season item 3 asks for a
@@ -36,7 +36,7 @@ Four tables, and the split between them is the point:
 ``model_version`` is ``{season}w{week:02d}-{suffix}``, matching the spec's
 ``2025w08-a`` shape, where the suffix is a short hash of the configuration.
 Same config, same version; changed config, different version. That is the
-property the whole log rests on — two rows under one version must mean two
+property the whole log rests on - two rows under one version must mean two
 predictions from one model.
 """
 
@@ -57,7 +57,7 @@ from nflpred._provenance import library_versions as library_versions
 from nflpred.config import PREDICTIONS_DB
 
 #: Length of the configuration hash in ``model_version``. Six hex characters is
-#: 16.7M configurations — ample for distinguishing the handful a project has,
+#: 16.7M configurations - ample for distinguishing the handful a project has,
 #: and short enough that a version string stays readable in a table.
 SUFFIX_LENGTH: int = 6
 
@@ -151,8 +151,8 @@ def config_suffix(
 
     Deliberately **not** a hash of the fitted objects. Two runs of the same
     recipe produce bit-identical models here (`tests/test_models.py` pins that),
-    so hashing the recipe answers the question a version string is asked — "is
-    this the same model?" — while staying computable before the fit and
+    so hashing the recipe answers the question a version string is asked - "is
+    this the same model?" - while staying computable before the fit and
     readable afterwards.
     """
     payload = json.dumps(
@@ -169,12 +169,12 @@ def config_suffix(
 
 
 def model_version(season: int, week: int, suffix: str) -> str:
-    """``2025w08-3f9c1a`` — the spec's shape, with a config hash for a suffix."""
+    """``2025w08-3f9c1a`` - the spec's shape, with a config hash for a suffix."""
     return f"{season}w{week:02d}-{suffix}"
 
 
 def suffix_of(version: str) -> str:
-    """The config hash in a ``model_version`` — everything after the last hyphen."""
+    """The config hash in a ``model_version`` - everything after the last hyphen."""
     return version.rsplit("-", 1)[-1]
 
 
@@ -183,7 +183,7 @@ def feature_hash(values: Sequence[float]) -> str:
 
     The spec asks predictions to be persisted with a feature-vector hash. Order
     matters and is the feature tuple's order, so this changes if the columns are
-    reordered — which is the point: the same numbers under a different layout
+    reordered - which is the point: the same numbers under a different layout
     are a different input.
     """
     payload = ",".join(f"{float(v):.10g}" for v in values)
@@ -267,7 +267,7 @@ def record_predictions(
 ) -> int:
     """Upsert one week of predictions and their per-member votes.
 
-    ``records`` are output-contract records in ``frame``'s row order —
+    ``records`` are output-contract records in ``frame``'s row order -
     :func:`~nflpred.modeling.ensemble.predict_records` output, with or without Phase
     6's ``explanation`` key merged on. Idempotent by ``(game_id,
     model_version)``: a rerun of the same week under the same config replaces
@@ -351,7 +351,7 @@ def settle(connection: sqlite3.Connection, results: pl.DataFrame) -> int:
     """Join completed results onto logged predictions.
 
     ``results`` needs ``game_id``, ``home_score``, ``away_score`` and
-    ``home_win`` — the last as the D-4 float, so a tie settles as 0.5 here
+    ``home_win`` - the last as the D-4 float, so a tie settles as 0.5 here
     exactly as it scores as 0.5 everywhere else rather than being rounded into a
     win by the log.
 
@@ -406,7 +406,7 @@ def settled_predictions(
     """Every logged ensemble prediction that has an outcome, one row per game.
 
     ``suffix`` scopes the result to a single config hash. The filter is guarded:
-    an empty log — predictions written but nothing settled yet — comes back as a
+    an empty log - predictions written but nothing settled yet - comes back as a
     zero-column frame, so filtering it on ``model_version`` here rather than at
     the call site keeps every caller from having to re-check ``is_empty()``.
     """
@@ -429,7 +429,7 @@ def settled_predictions(
 def settled_member_predictions(connection: sqlite3.Connection) -> pl.DataFrame:
     """Every logged per-member probability that has an outcome.
 
-    The table the rolling-Brier report is computed from — a join and a group-by
+    The table the rolling-Brier report is computed from - a join and a group-by
     rather than a walk over JSON, which is the whole reason
     ``member_predictions`` is flat.
     """
@@ -474,7 +474,7 @@ def summary(connection: sqlite3.Connection) -> dict[str, Any]:
 def config_suffixes(connection: sqlite3.Connection) -> list[str]:
     """Distinct configuration suffixes in the log, newest first.
 
-    More than one means the log spans a model change — which is what it is for,
+    More than one means the log spans a model change - which is what it is for,
     and also why :func:`rolling_brier` must not pool them.
     """
     seen: list[str] = []
@@ -497,12 +497,12 @@ def rolling_brier(
     correlate at 0.959 (D-21) and every weighting scheme tried lands within
     0.0006 of every other, so a mechanism that re-derived weights weekly from
     ~16 games would be fitting noise on a flat surface. It is a monitoring
-    signal — a member whose Brier drifts is worth looking at, not worth
+    signal - a member whose Brier drifts is worth looking at, not worth
     automatically down-weighting.
 
     **Scoped to one configuration.** ``suffix`` defaults to the most recently
     written one, because pooling two configurations' predictions on the same
-    games would report a Brier score for a model that never existed — and the
+    games would report a Brier score for a model that never existed - and the
     log is deliberately built to hold several, so this is the ordinary case
     rather than an edge one. Comparing two of them is a matter of calling this
     twice, which is exactly the comparison the log exists to make possible.

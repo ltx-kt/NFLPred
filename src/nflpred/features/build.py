@@ -31,7 +31,7 @@ What adds something is keeping the two halves as **separate columns**, which
 lets the model weight a good offence differently from a good defence instead of
 being forced to treat them as interchangeable. That is what is built here.
 
-Situational columns are taken from ``schedules`` rather than recomputed —
+Situational columns are taken from ``schedules`` rather than recomputed -
 ``home_rest``, ``div_game``, ``roof`` and friends are given, and re-deriving
 them from play-by-play would only introduce disagreement.
 
@@ -67,7 +67,7 @@ from nflpred.features.qb import build_qb
 from nflpred.features.rolling import build_rolling, stem
 
 #: The Phase 2 baseline: seven rolling differentials and three situational
-#: columns. Deliberately absent — ``spread_line`` / ``total_line`` (Tier 3,
+#: columns. Deliberately absent - ``spread_line`` / ``total_line`` (Tier 3,
 #: measured separately), turnovers (Tier 3, barely persistent week to week),
 #: Elo and the QB composite (Phase 3). This tuple is the bar every later phase
 #: has to clear, so it does not change once measured. **Do not edit it.** A bar
@@ -91,7 +91,7 @@ BASELINE_FEATURES: Final[tuple[str, ...]] = (
 #: standalone Elo estimator instead.
 ELO_FEATURES: Final[tuple[str, ...]] = ("elo_diff",)
 
-#: The Tier 1 QB composite. Form as a differential, the backup flags per side —
+#: The Tier 1 QB composite. Form as a differential, the backup flags per side -
 #: a backup starting for the home team and one starting for the away team are
 #: not the same event, and differencing them would say they were.
 QB_FEATURES: Final[tuple[str, ...]] = (
@@ -102,7 +102,7 @@ QB_FEATURES: Final[tuple[str, ...]] = (
     "away_backup_qb_starting",
 )
 
-#: The 16 columns that minimised validation log loss at Phase 3 — the baseline
+#: The 16 columns that minimised validation log loss at Phase 3 - the baseline
 #: ten plus Elo plus the QB composite. Named here so Phase 4 can measure every
 #: estimator against it as well as against the curated 29.
 #:
@@ -179,7 +179,7 @@ _INDOOR_ROOFS: Final[frozenset[str]] = frozenset({"dome", "closed"})
 #:
 #: A fixed dome reads ``dome`` in the schedule years ahead. A **retractable**
 #: one reads ``open`` or ``closed``, which is a decision made on the day, so it
-#: is null for every future game — 43 of the 2026 season's 272, all at the five
+#: is null for every future game - 43 of the 2026 season's 272, all at the five
 #: retractable venues. That makes ``is_dome`` the one situational feature that
 #: is not knowable before kickoff, and it is in `BASELINE_FEATURES`.
 #:
@@ -200,7 +200,7 @@ _INDOOR_ROOFS: Final[frozenset[str]] = frozenset({"dome", "closed"})
 #: It exists so that a live prediction can say which of its inputs was observed.
 _ROOF_DEFAULT: Final[str] = "closed"
 
-#: Rest days at or below this are a short week — a Thursday game after a Sunday.
+#: Rest days at or below this are a short week - a Thursday game after a Sunday.
 SHORT_WEEK_REST: Final[int] = 4
 
 #: Rest days at or above this mean the team is coming off a bye.
@@ -228,7 +228,7 @@ _SIDE_COLUMNS: Final[tuple[str, ...]] = (
     *[f"def_{s}_r{_MATCHUP_WINDOW}" for s in _MATCHUP_STATS],
 )
 
-#: Per-team identifiers carried through the split. Not features — they are what
+#: Per-team identifiers carried through the split. Not features - they are what
 #: makes a Phase 6 explanation able to name the quarterback it is talking about.
 _SIDE_LABELS: Final[tuple[str, ...]] = ("projected_qb",)
 
@@ -263,7 +263,7 @@ def league_week_index() -> pl.Expr:
     suggested half-life range of 20-40 weeks is roughly one to two **seasons**;
     under a calendar reading the same numbers would be well under a single
     season, and the grid would be searching a different question. Postseason
-    weeks are included and are ordinary steps — a conference championship is one
+    weeks are included and are ordinary steps - a conference championship is one
     week after a divisional round in both readings.
 
     Dense-ranked rather than counted from a fixed origin, so the index starts at
@@ -348,10 +348,10 @@ def turnover_reliability(
     mean turnover margin is taken, and the two are correlated across all
     team-seasons in ``seasons``. A regular season splits into two halves of
     about eight games each, which is exactly the length of the ``r8`` window the
-    factor is applied to — so this correlation estimates the reliability of the
+    factor is applied to - so this correlation estimates the reliability of the
     feature as built, with no Spearman-Brown extrapolation needed.
 
-    Computed on **training seasons only**, like any other fitted quantity — and
+    Computed on **training seasons only**, like any other fitted quantity - and
     then frozen into :data:`~nflpred.config.TURNOVER_RELIABILITY` rather than
     applied directly, so that the feature does not silently rescale itself every
     time the table behind it changes. This function is what produced that
@@ -360,7 +360,7 @@ def turnover_reliability(
     One caveat, stated rather than glossed: multiplying a feature by a constant
     is a **no-op** under a standardised linear model, which rescales it straight
     back. So ``turnover_diff_shrunk`` cannot change the Phase 3 numbers, and it
-    is not what answers the question — the ``PHASE3_FEATURES_NO_TO`` variant is,
+    is not what answers the question - the ``PHASE3_FEATURES_NO_TO`` variant is,
     and it says turnovers are worth ~0.0002 of validation log loss. The
     shrinkage earns its place from Phase 4 on, where tree splits and
     regularisation paths do respond to scale, and as a statement of how much of
@@ -397,7 +397,7 @@ def _net_quality(
     subtraction is the right way round: a team with +0.10 offensive EPA/play and
     -0.05 allowed nets +0.15.
 
-    Turnovers are the one statistic where that reading inverts — ``off_turnovers``
+    Turnovers are the one statistic where that reading inverts - ``off_turnovers``
     is giveaways, so ``net_turnovers`` is a turnover *deficit*, not a surplus.
     The sign lives in the coefficient; the construction stays uniform.
     """
@@ -520,11 +520,11 @@ def build_features(
             ),
             off_bye_diff=(pl.col("home_off_bye") - pl.col("away_off_bye")).cast(pl.Int8),
             # Indoors there is no wind to record, so zero is the observation
-            # rather than an imputation — `is_dome` already tells the model
+            # rather than an imputation - `is_dome` already tells the model
             # which it is. Outdoor games with a missing reading are a different
             # thing and get their own flag rather than being averaged over.
             # Read off `is_dome` rather than `roof` so the two agree by
-            # construction — with a null roof, `~roof.is_in(...)` is itself null
+            # construction - with a null roof, `~roof.is_in(...)` is itself null
             # and this flag would come through null for every future fixture.
             weather_unknown=(
                 (pl.col("is_dome") == 0) & pl.col("wind").is_null()
@@ -551,8 +551,8 @@ def build_features(
 
     # Five 2006 games at Arrowhead have no charting data upstream, so their
     # rolling `cpoe` windows come through null (see docs/DATA_NOTES.md). Handled
-    # the same way as an unknown quarterback: set to the neutral value — cpoe is
-    # completion percentage *over expected*, so zero is genuinely neutral — and
+    # the same way as an unknown quarterback: set to the neutral value - cpoe is
+    # completion percentage *over expected*, so zero is genuinely neutral - and
     # flagged, rather than mean-imputed into invisibility.
     cpoe_nets = [c for c in net_feature_names(windows, stats) if "cpoe" in c]
     games = games.with_columns(
@@ -629,7 +629,7 @@ def to_training_arrays(
 
     Ties are expanded here rather than in the matrix (D-4). The matrix says a
     tie is 0.5, which is the truth; the classifier needs a binary ``y``, so a
-    tie becomes two rows at half weight — one win, one loss. Feature rows are
+    tie becomes two rows at half weight - one win, one loss. Feature rows are
     duplicated to match via the index :func:`~nflpred.evaluate.expand_ties` returns.
 
     ``weight`` names an optional column to multiply into the sample weights,

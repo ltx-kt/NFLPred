@@ -6,7 +6,7 @@ line), and the outcome.
 
 .. warning::
    These rows contain **same-game** box-score statistics. That is correct here
-   and is not a leakage violation — this is the raw substrate. Nothing in this
+   and is not a leakage violation - this is the raw substrate. Nothing in this
    module may be joined to a game row as a feature. Lagging happens in
    ``nflpred.features.rolling``, which rolls over prior games and
    ``shift(1)``s before joining.
@@ -98,7 +98,7 @@ _PBP_STATS: tuple[str, ...] = (
 #: ``points`` is the odd one out: it comes off the schedule spine rather than
 #: out of play-by-play. It is listed here anyway so that ``off_points`` and
 #: ``def_points`` ride the existing ``off_``/``def_`` rolling machinery instead
-#: of needing a second code path in :mod:`nflpred.features.rolling` — Tier 2's
+#: of needing a second code path in :mod:`nflpred.features.rolling` - Tier 2's
 #: "rolling points scored / allowed" for the cost of an alias.
 OFFENSE_STATS: tuple[str, ...] = (*_PBP_STATS, "points")
 
@@ -110,7 +110,7 @@ def _offense_by_game(
 
     Computed once. The defensive side is attached later by joining this frame
     to the opponent, since a team's defensive line *is* its opponent's
-    offensive line — there is no second aggregation to do.
+    offensive line - there is no second aggregation to do.
     """
     plays = pbp.filter(_scrimmage_play(wp_band))
 
@@ -125,7 +125,7 @@ def _offense_by_game(
         rush_plays=pl.col("rush").sum(),
         rush_epa_per_play=pl.col("epa").filter(pl.col("rush") == 1).mean(),
         rush_success_rate=pl.col("success").filter(pl.col("rush") == 1).mean(),
-        # yardage — only over plays that actually ran
+        # yardage - only over plays that actually ran
         yards_per_play=pl.col("yards_gained").filter(_RAN).mean(),
         explosive_rate=(pl.col("yards_gained").filter(_RAN) >= EXPLOSIVE_YARDS).mean(),
         # third down, using nflverse's own flags
@@ -183,8 +183,8 @@ def _points_from_pbp(pbp: pl.DataFrame) -> pl.DataFrame:
 def _spine(schedules: pl.DataFrame) -> pl.DataFrame:
     """One row per (game, team) for every *completed* game.
 
-    Games with no result — future fixtures, and the cancelled 2022 Bills-Bengals
-    game — are dropped here and reported separately by the Phase 1 report.
+    Games with no result - future fixtures, and the cancelled 2022 Bills-Bengals
+    game - are dropped here and reported separately by the Phase 1 report.
     """
     played = schedules.filter(
         pl.col("home_score").is_not_null() & pl.col("away_score").is_not_null()
@@ -202,7 +202,7 @@ def _spine(schedules: pl.DataFrame) -> pl.DataFrame:
         )
 
     return pl.concat([side("home", "away"), side("away", "home")]).with_columns(
-        # `is_home` stays nominal even at neutral sites — the Super Bowl still
+        # `is_home` stays nominal even at neutral sites - the Super Bowl still
         # has a designated home team for line purposes. Whether the home-field
         # feature should be zeroed there is a Phase 3 call, so both facts are
         # recorded and neither is baked in.

@@ -13,7 +13,7 @@ feature. ``tests/test_elo.py`` targets exactly that property: perturbing a game'
 result must leave that game's own ``elo_pre`` untouched and must move the next
 one's.
 
-Starting in 1999 rather than 2006 is what D-2 kept the early seasons for — by
+Starting in 1999 rather than 2006 is what D-2 kept the early seasons for - by
 the time the feature matrix opens in 2006, every rating has seven seasons of
 burn-in behind it and none of them is still sitting at its initial value.
 
@@ -71,7 +71,7 @@ def _mov_multiplier(margin: int, winner_diff: float) -> float:
     """538's log-margin multiplier.
 
     ``margin`` is floored at one point. A tie has a margin of zero, and
-    ``ln(0 + 1) == 0`` would multiply the whole update away — which would make
+    ``ln(0 + 1) == 0`` would multiply the whole update away - which would make
     ties non-events for Elo and contradict D-4's "a tie scores 0.5, which is
     Elo's native handling". Flooring gives a tie the update a one-point game
     would get, at half the surprise.
@@ -99,7 +99,7 @@ def _run(
     between what escapes and what does not is made by the callers below, so
     there is exactly one implementation of the update.
 
-    Games with no score — future fixtures — still yield a record with pre-game
+    Games with no score - future fixtures - still yield a record with pre-game
     ratings and simply do not trigger an update. That is what lets the live 2026
     path read an Elo feature off an unplayed game.
 
@@ -237,7 +237,7 @@ def season_end_ratings(
 ) -> pl.DataFrame:
     """Each team's rating after its last game of each season.
 
-    Diagnostic only — post-game ratings are not features and this frame is never
+    Diagnostic only - post-game ratings are not features and this frame is never
     joined to anything. It exists so the face-validity check (2007 NE at the top,
     2008 DET at the bottom) can be run against a rating system that is otherwise
     only visible through its predictions.

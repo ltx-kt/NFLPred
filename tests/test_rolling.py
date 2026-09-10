@@ -1,7 +1,7 @@
 """Unit tests for the lagging machinery.
 
 The synthetic series here use values chosen so that a hand-computed mean is
-unambiguous — if a window is off by one game, or the shift is missing, the
+unambiguous - if a window is off by one game, or the shift is missing, the
 arithmetic stops matching immediately.
 """
 
@@ -17,7 +17,7 @@ WINDOWS = (3,)
 STATS = ("epa_per_play",)
 
 #: The synthetic series carries one statistic, so the season-to-date window is
-#: restricted to it too — the real :data:`~nflpred.config.STD_WINDOW_STATS` names
+#: restricted to it too - the real :data:`~nflpred.config.STD_WINDOW_STATS` names
 #: columns these toy frames do not have.
 STD_STATS = STATS
 
@@ -68,7 +68,7 @@ def test_rolling_value_is_the_mean_of_the_prior_window():
         1.0,                  # mean(1)
         pytest.approx(1.5),   # mean(1, 2)
         2.0,                  # mean(1, 2, 3)
-        3.0,                  # mean(2, 3, 4) — the 1.0 has fallen out
+        3.0,                  # mean(2, 3, 4) - the 1.0 has fallen out
     ]
 
 
@@ -102,7 +102,7 @@ def test_window_carries_across_a_season_boundary():
 
     opener = out.filter((pl.col("season") == 2024) & (pl.col("week") == 1))
     assert opener.height == 1
-    # mean of the last three 2023 games (1.0, 10.0, 20.0) — not null, not reset.
+    # mean of the last three 2023 games (1.0, 10.0, 20.0) - not null, not reset.
     assert opener["off_epa_r3"][0] == pytest.approx(31.0 / 3)
     assert opener["games_in_window_r3"][0] == 3
 
@@ -174,7 +174,7 @@ def test_season_to_date_is_the_expanding_mean_of_prior_games_this_season():
         None,                 # week 1: nothing this season and nothing before
         1.0,                  # mean(1)
         pytest.approx(1.5),   # mean(1, 2)
-        2.0,                  # mean(1, 2, 3) — the 1.0 has *not* fallen out
+        2.0,                  # mean(1, 2, 3) - the 1.0 has *not* fallen out
     ]
 
 

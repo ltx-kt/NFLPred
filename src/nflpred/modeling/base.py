@@ -6,7 +6,7 @@ these definitions and a pickle disagree, the definitions win.
 
 **How calibration works here.** D-5 requires the base estimator to be fitted on
 2006-2015 and the calibrator on 2016-2018, with the two never mixed. The spec
-names ``CalibratedClassifierCV(cv='prefit')`` for that, which no longer exists —
+names ``CalibratedClassifierCV(cv='prefit')`` for that, which no longer exists -
 it was removed in scikit-learn 1.9. The replacement is
 ``CalibratedClassifierCV(FrozenEstimator(fitted_base))``, which preserves the
 property D-5 actually depended on: exactly **one** inner estimator, inspectable
@@ -44,15 +44,15 @@ from nflpred.config import MODEL_PARAM_OVERRIDES, MODEL_PARAMS, N_JOBS, RANDOM_S
 from nflpred.features.build import CORE_FEATURES, to_training_arrays
 
 #: Calibrating a frozen estimator with sample weights warns that the weights
-#: reached only the calibrator. That is precisely the intent — the base is
-#: already fitted, and D-4's tie weights are being applied to the sigmoid — so
+#: reached only the calibrator. That is precisely the intent - the base is
+#: already fitted, and D-4's tie weights are being applied to the sigmoid - so
 #: the warning is expected and suppressed narrowly, by message, at the one call
 #: site that provokes it.
 _FROZEN_WEIGHT_WARNING: Final[str] = "Since FrozenEstimator does not appear to accept sample_weight"
 
 
 def _logreg(params: Mapping[str, Any]) -> Pipeline:
-    """Scaled L2 logistic regression — the Phase 2/3 estimator, now tuned."""
+    """Scaled L2 logistic regression - the Phase 2/3 estimator, now tuned."""
     return Pipeline(
         [
             ("scale", StandardScaler()),
@@ -62,7 +62,7 @@ def _logreg(params: Mapping[str, Any]) -> Pipeline:
 
 
 def _random_forest(params: Mapping[str, Any]) -> RandomForestClassifier:
-    """Random forest — the one estimator pinned to a single thread.
+    """Random forest - the one estimator pinned to a single thread.
 
     ``min_samples_leaf`` is gridded well above sklearn's default of 1: on 2,670
     games the default grows leaves down to single games, which memorises the
@@ -70,7 +70,7 @@ def _random_forest(params: Mapping[str, Any]) -> RandomForestClassifier:
 
     ``n_jobs=1`` is not a performance choice. sklearn's forest sums each tree's
     contribution into a shared output buffer from worker threads, so the order
-    of that sum is not fixed — measured here, a forest at ``n_jobs=4`` gives
+    of that sum is not fixed - measured here, a forest at ``n_jobs=4`` gives
     answers that differ in the last bit *between two calls on the same fitted
     model*. That is a millionth of nothing for a prediction and fatal for the
     D-17 fingerprint, which exists to distinguish "this is the model that was
@@ -81,7 +81,7 @@ def _random_forest(params: Mapping[str, Any]) -> RandomForestClassifier:
 
 
 def _xgboost(params: Mapping[str, Any]) -> XGBClassifier:
-    """XGBoost. ``n_jobs`` is pinned — thread count changes float summation order."""
+    """XGBoost. ``n_jobs`` is pinned - thread count changes float summation order."""
     return XGBClassifier(
         random_state=RANDOM_STATE,
         n_jobs=N_JOBS,
@@ -121,7 +121,7 @@ def _catboost(params: Mapping[str, Any]) -> CatBoostClassifier:
 
 #: The five estimators, by the name they carry through every table, artifact and
 #: manifest in the project. A bare `DecisionTreeClassifier` is deliberately
-#: absent — the spec says it is dominated by the forest and only adds noise.
+#: absent - the spec says it is dominated by the forest and only adds noise.
 BUILDERS: Final[dict[str, Callable[[Mapping[str, Any]], ClassifierMixin]]] = {
     "logreg": _logreg,
     "random forest": _random_forest,
@@ -135,7 +135,7 @@ def params_for(name: str, feature_set: Sequence[str]) -> dict[str, Any]:
     """The frozen hyperparameters for one estimator on one feature set (D-16).
 
     Overrides are keyed by feature count, which is how the grid reported them.
-    A set with no entry gets the shared constants — true of `wide_features()`
+    A set with no entry gets the shared constants - true of `wide_features()`
     at 104 columns, which is a control rather than a candidate and was never
     gridded.
     """
@@ -217,7 +217,7 @@ def fit_all(
 
     The frozen-split convenience wrapper. Phase 7's walk-forward harness calls
     :func:`fit_calibrated` directly instead, because the two windows it needs
-    move week by week and cannot be named by :func:`split_frame` — which is the
+    move week by week and cannot be named by :func:`split_frame` - which is the
     seam D-26 turns on.
     """
     train, calib = split_frame(matrix, "train"), split_frame(matrix, "calib")
@@ -246,7 +246,7 @@ def home_win_probability(
 
 
 def elo_probability(frame: pl.DataFrame) -> np.ndarray:
-    """The Elo-only baseline. No estimator — the rating system already emits a
+    """The Elo-only baseline. No estimator - the rating system already emits a
     probability, and `elo_prob` was computed before kickoff like every other
     column in the matrix."""
     return frame["elo_prob"].to_numpy().astype(float)
@@ -261,8 +261,8 @@ def elo_logit(probability: np.ndarray) -> np.ndarray:
 def fit_elo_platt(calib: pl.DataFrame, weight: str | None = None) -> LogisticRegression:
     """Platt-scale Elo on the calibration seasons, and return the scaler.
 
-    Elo has no base fit to freeze — the rating system already emits a
-    probability — so its calibrator is a plain logistic regression on the logit,
+    Elo has no base fit to freeze - the rating system already emits a
+    probability - so its calibrator is a plain logistic regression on the logit,
     fitted on 2016-2018 and nothing else. That gives it exactly the calibration
     split the five estimators get (D-5), and makes "is Elo's raw probability
     already well calibrated?" a number rather than an impression.
@@ -289,7 +289,7 @@ def inner_estimator(model: CalibratedClassifierCV) -> ClassifierMixin:
     """The fitted base estimator inside a calibrated wrapper.
 
     The one place in the project that knows this path. Phase 6 explains the
-    *uncalibrated* model — `TreeExplainer` cannot see through a sigmoid — so it
+    *uncalibrated* model - `TreeExplainer` cannot see through a sigmoid - so it
     needs this object, and it should not need to know that
     ``calibrated_classifiers_[0].estimator`` is a `FrozenEstimator` whose own
     ``.estimator`` is the thing that was fitted. If sklearn moves it again, this

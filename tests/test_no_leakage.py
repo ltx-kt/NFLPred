@@ -2,25 +2,25 @@
 
 The spec asks for "an explicit assertion that verifies no feature column was
 derived from the target game's ``game_id``". Provenance cannot be read off a
-dataframe — by the time a value is a float, where it came from is gone. So
+dataframe - by the time a value is a float, where it came from is gone. So
 these tests are behavioural instead, and between them they pin the property
 down tighter than a provenance check would:
 
-* **Perturbation** — rewrite one game's box score, rebuild, and the same game's
+* **Perturbation** - rewrite one game's box score, rebuild, and the same game's
   own feature row must be unchanged. If any feature had touched the target
   game, this fails. The strongest single check here.
-* **Recomputation** — re-derive the rolling value from strictly prior games by
+* **Recomputation** - re-derive the rolling value from strictly prior games by
   a completely separate code path and demand equality.
-* **Chronology** — every contributing game kicked off before the target did.
-* **Correlation tripwire** — no feature correlates with the target above 0.9,
+* **Chronology** - every contributing game kicked off before the target did.
+* **Correlation tripwire** - no feature correlates with the target above 0.9,
   which is what a target-derived column sneaking in would look like.
 
 These run against the real built tables, not synthetic ones. A leak that only
 appears at the seam between two seasons or two franchises would never show up
 in a toy frame.
 
-From Phase 3 the perturbation runs the **whole** pipeline — rolling form, Elo
-and the QB composite — and rewrites the game's *result* as well as its box
+From Phase 3 the perturbation runs the **whole** pipeline - rolling form, Elo
+and the QB composite - and rewrites the game's *result* as well as its box
 score. Rolling form is blind to who won, so a box-score-only perturbation would
 have exercised none of Elo; a result-only one would have exercised none of the
 form. The Elo and QB modules also have their own perturbation tests in
@@ -105,7 +105,7 @@ def perturbation(team_game: pl.DataFrame) -> tuple[pl.DataFrame, pl.DataFrame, d
 
     The chosen game sits deep enough into a season to have a full window behind
     it and to have games after it, so the test can check both that its own row
-    is untouched *and* that later rows do move — an assertion that only holds
+    is untouched *and* that later rows do move - an assertion that only holds
     if the perturbation was consequential in the first place.
     """
     target = (
@@ -348,7 +348,7 @@ def test_matrix_row_count_is_unchanged_by_phase_3(matrix):
 
     Scoped to completed seasons. The count is a fact about 2006-2025 and would
     otherwise become a calendar bomb the first September the live season starts
-    producing results — a test that fails because football happened is a test
+    producing results - a test that fails because football happened is a test
     that gets deleted rather than read.
     """
     completed = matrix.filter(pl.col("season") <= LAST_COMPLETED_SEASON)

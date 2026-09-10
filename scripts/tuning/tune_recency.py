@@ -3,7 +3,7 @@
 The D-11 / D-16 pattern, applied to the one hyperparameter Phase 7 introduces.
 The spec suggests trying 20-40 weeks and calls recency weighting "likely the
 highest-value item" in the in-season list; D-18 is the specific reason to want
-it — the calibrator was fitted to a 58.3%-home-win era and scored in a 51.3%
+it - the calibrator was fitted to a 58.3%-home-win era and scored in a 51.3%
 one, and the spec named this as the fix rather than tuning against validation.
 
 Three rules keep it auditable rather than a moving target:
@@ -21,7 +21,7 @@ footnote. Effective sample size is reported next to every row, because that is
 the cost side: a half-life short enough to track a shifting home-field advantage
 is short enough to throw most of the sample away. **If the control wins, the
 finding is that recency weighting does not help here and the constant stays
-``None``** — the same rule Phase 5 applied to the ensemble.
+``None``** - the same rule Phase 5 applied to the ensemble.
 
 Writes nothing. Run::
 
@@ -72,7 +72,7 @@ HALF_LIFE_GRID: tuple[float | None, ...] = (
 )
 
 #: How many target weeks one fit serves. Production and tuning must agree, so
-#: this is 1 here because `walk_forward`'s default is 1 — a half-life gridded at
+#: this is 1 here because `walk_forward`'s default is 1 - a half-life gridded at
 #: a coarser cadence would have been chosen for a different system.
 CADENCE: int = 1
 
@@ -95,7 +95,7 @@ def _row(matrix: pl.DataFrame, half_life: float | None) -> dict[str, object]:
     probability = result.probability()
 
     # Effective sample size at the *last* week of the walk, which is the widest
-    # window any fit in it used — the honest "how many games is this worth".
+    # window any fit in it used - the honest "how many games is this worth".
     last = result.weeks.row(-1, named=True)
     completed = matrix.filter(pl.col(CLOCK_COLUMN) < last["league_week"])
     weights = recency_weights(completed, last["league_week"], half_life).to_numpy()
@@ -122,7 +122,7 @@ def main() -> None:
 
     matrix = pl.read_parquet(FEATURE_MATRIX_GT_PATH)
     print(
-        f"Recency grid — walk-forward across validation "
+        f"Recency grid - walk-forward across validation "
         f"{VAL_SEASONS[0]}-{VAL_SEASONS[1]} only, refit every week, "
         f"calibration window {CALIB_WINDOW_SEASONS} seasons.\n"
         f"Half-lives are league weeks; the offseason is not counted.\n"
@@ -159,7 +159,7 @@ def main() -> None:
     if best["half_life"] != frozen:
         print(
             "\nThe frozen constant no longer matches this grid's winner. Update it "
-            "deliberately, or leave it and record why — do not let them drift."
+            "deliberately, or leave it and record why - do not let them drift."
         )
 
 

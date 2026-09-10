@@ -2,8 +2,8 @@
 
 The spec left K, home-field advantage and the margin-of-victory multiplier
 unspecified. This script resolves them the only way that keeps the later
-comparison honest: grid them against **2006-2015** — the same seasons every
-phase trains on (D-5) — and freeze the winner into :mod:`nflpred.config` as a
+comparison honest: grid them against **2006-2015** - the same seasons every
+phase trains on (D-5) - and freeze the winner into :mod:`nflpred.config` as a
 constant.
 
 Two rules make this auditable rather than a moving target:
@@ -15,7 +15,7 @@ Two rules make this auditable rather than a moving target:
   constants it produced. This script exists so that comment can be reproduced,
   not so the constants can drift.
 
-Ratings still burn in from 1999 — only the *scoring* window is restricted. A
+Ratings still burn in from 1999 - only the *scoring* window is restricted. A
 grid run on ratings that started cold in 2006 would be choosing a K for a
 different rating system than the one Phase 3 uses.
 
@@ -33,7 +33,7 @@ from nflpred.evaluate import accuracy, brier, log_loss
 from nflpred.features.elo import build_elo
 from nflpred.ingest import read_schedules
 
-#: The grid. Small on purpose — four K values spanning the range anyone
+#: The grid. Small on purpose - four K values spanning the range anyone
 #: sensible would pick, three plausible home-field advantages, and the MOV
 #: multiplier as the one structural choice. 24 cells, ~7,000 games each.
 K_GRID: tuple[float, ...] = (12.0, 16.0, 20.0, 24.0)
@@ -93,7 +93,7 @@ def main() -> None:
     ).sort("log_loss")
 
     print(
-        f"Elo grid — scored on {TRAIN_SEASONS[0]}-{TRAIN_SEASONS[1]} only "
+        f"Elo grid - scored on {TRAIN_SEASONS[0]}-{TRAIN_SEASONS[1]} only "
         f"({rows[0]['n']:,} games). Ratings burn in from 1999.\n"
     )
     print(grid)
@@ -110,7 +110,7 @@ def main() -> None:
     if (best["k"], best["hfa"], best["mov"]) != (ELO_K, ELO_HFA, ELO_MOV):
         print(
             "\nThe frozen constants no longer match this grid's winner. Update them "
-            "deliberately, or leave them and record why — do not let them drift."
+            "deliberately, or leave them and record why - do not let them drift."
         )
 
 

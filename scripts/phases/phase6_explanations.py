@@ -12,13 +12,13 @@ Four things are printed, in the order they should be read:
    positive, which is what makes them usable as SHAP-combination weights at all.
 2. **A reconciliation table.** Per-member additivity and the ensemble total,
    across all 821 validation games. This is the evidence for the exactness claim
-   in `nflpred.explain` — if the secant derivation were wrong, or a member's space
+   in `nflpred.explain` - if the secant derivation were wrong, or a member's space
    mislabelled, it shows up here as a residual well above machine epsilon.
 3. **Global mean |SHAP| per feature per model.** Doubles as the evidence for the
    spec's "the stated top factor is not a globally ignored feature" test, and is
    worth reading against Phase 3's logistic-regression coefficients.
 4. **Five hand-checked validation games**, chosen by rule rather than by hand so
-   the selection is reproducible — including the most confident **wrong** pick,
+   the selection is reproducible - including the most confident **wrong** pick,
    which is the one the spec cares most about. *A wrong prediction with a
    coherent explanation is a working system; a wrong prediction with an
    incoherent one means the attribution is broken.* No assertion covers that;
@@ -115,7 +115,7 @@ def main() -> None:
         f"validation {VAL_SEASONS[0]}-{VAL_SEASONS[1]}: {val.height:,} games   "
         f"features: {len(ENSEMBLE_FEATURES)}   ({elapsed:.1f}s to fit and explain everything)"
     )
-    print("headline: stack A (prefit, raw members) — pinned on construction, see D-22\n")
+    print("headline: stack A (prefit, raw members) - pinned on construction, see D-22\n")
 
     _coefficients(coefficients, intercept, origin)
     _reconciliation(attributions, explainers, x, contributions, stack, val, origin)
@@ -161,7 +161,7 @@ def _coefficients(
     print(
         f"  base: every member at its own training-average output gives an ensemble "
         f"log-odds of {origin:+.4f} (p = {1 / (1 + np.exp(-origin)):.4f}). Contributions\n"
-        f"  are measured from there, not from 0.50 — an average matchup already leans home."
+        f"  are measured from there, not from 0.50 - an average matchup already leans home."
     )
 
 
@@ -225,7 +225,7 @@ def _reconciliation(
     print(
         "  xgboost is the loose row because its contributions come back float32; every\n"
         "  other member reconciles at machine epsilon. The ensemble total is exact by\n"
-        "  construction — its residual is the float round-trip through sigmoid and back,\n"
+        "  construction - its residual is the float round-trip through sigmoid and back,\n"
         "  not method error, which is why the secant slope is worth the derivation."
     )
 
@@ -233,7 +233,7 @@ def _reconciliation(
 def _global_importance(attributions: Mapping[str, Attribution]) -> pl.DataFrame:
     """Mean |SHAP| per feature per model, over the whole validation split.
 
-    Two things to read here. `elo_diff` should dominate — it is the largest
+    Two things to read here. `elo_diff` should dominate - it is the largest
     single input to five of six members, and if a tree model ranks something
     else first that is worth a look rather than a shrug. And a feature that is
     **exactly** zero for a model is one that model never splits on: the boosters
@@ -267,7 +267,7 @@ def _global_importance(attributions: Mapping[str, Attribution]) -> pl.DataFrame:
     print(
         "  features a model never splits on: "
         + (", ".join(ignored) if ignored else "none")
-        + "\n  (the five sklearn members cannot see elo_prob and Elo cannot see the other 16 —"
+        + "\n  (the five sklearn members cannot see elo_prob and Elo cannot see the other 16 -"
         "\n  that is column layout, not indifference, and is excluded from the list above.)"
     )
     return frame
@@ -293,7 +293,7 @@ def _hand_check(
 
     picks = {
         "most confident CORRECT pick": np.argmax(np.where(correct, edge, -1.0)),
-        "most confident WRONG pick — the one the spec cares about": np.argmax(
+        "most confident WRONG pick - the one the spec cares about": np.argmax(
             np.where(~correct, edge, -1.0)
         ),
         "a 5/6 member disagreement": np.argmax(np.where(agreement == 5, edge, -1.0)),
@@ -332,8 +332,8 @@ def _no_read_share(probability: np.ndarray) -> None:
 def _importance_plot(importance: pl.DataFrame, top: int = 12) -> Path:
     """Mean |SHAP| by feature, one series per model.
 
-    Follows `nflpred.evaluate.reliability_diagram`'s conventions — deferred import,
-    ``Agg``, return the `Path` — so the two report generators behave the same.
+    Follows `nflpred.evaluate.reliability_diagram`'s conventions - deferred import,
+    ``Agg``, return the `Path` - so the two report generators behave the same.
     """
     import matplotlib
 
@@ -354,7 +354,7 @@ def _importance_plot(importance: pl.DataFrame, top: int = 12) -> Path:
     ax.set_yticks(positions, labels, fontsize=8)
     ax.set_xlabel("mean |SHAP| (each model in its own output space, stacked)")
     ax.set_title(
-        f"Phase 6 attribution — validation {VAL_SEASONS[0]}-{VAL_SEASONS[1]}"
+        f"Phase 6 attribution - validation {VAL_SEASONS[0]}-{VAL_SEASONS[1]}"
     )
     ax.legend(loc="lower right", fontsize=8)
     fig.tight_layout()

@@ -26,7 +26,7 @@ DATA_PROCESSED: Final[Path] = ROOT / "data" / "processed"
 ARTIFACTS_DIR: Final[Path] = ROOT / "artifacts"
 REPORTS_DIR: Final[Path] = ARTIFACTS_DIR / "reports"
 
-#: Fitted model artifacts. Outputs, not a cache — see D-17. Nothing reads from
+#: Fitted model artifacts. Outputs, not a cache - see D-17. Nothing reads from
 #: here to avoid refitting; a phase script always refits and overwrites.
 MODELS_DIR: Final[Path] = ARTIFACTS_DIR / "models"
 
@@ -36,7 +36,7 @@ SCHEDULES_PATH: Final[Path] = DATA_RAW / "schedules.parquet"
 MANIFEST_PATH: Final[Path] = DATA_RAW / "manifest.json"
 
 #: The Phase 7 prediction log (D-28). SQLite, in the stdlib, under the already
-#: gitignored ``data/`` tree — a weekly pipeline that needs a database server to
+#: gitignored ``data/`` tree - a weekly pipeline that needs a database server to
 #: record what it predicted is a weekly pipeline that will stop being run.
 PREDICTIONS_DB: Final[Path] = ROOT / "data" / "predictions.sqlite"
 
@@ -69,7 +69,7 @@ LIVE_SEASON: Final[int] = 2026
 #: Seasons pulled and cached. Wider than the training matrix on purpose: the
 #: pre-2006 seasons cost little and give Elo a burn-in runway (D-2).
 #:
-#: Extended through :data:`LIVE_SEASON` at Phase 7 — the live path needs the
+#: Extended through :data:`LIVE_SEASON` at Phase 7 - the live path needs the
 #: season it is predicting to be pullable, and its play-by-play is legitimately
 #: absent until week 1 kicks off. `nflpred.ingest.read_pbp` skips a live season with
 #: no plays yet rather than raising, which is the one place that absence is
@@ -82,7 +82,7 @@ MATRIX_START_SEASON: Final[int] = 2006
 
 # -------------------------------------------------------------------- splits
 
-#: Inclusive (start, end) season bounds. Time-ordered and non-overlapping —
+#: Inclusive (start, end) season bounds. Time-ordered and non-overlapping -
 #: constraint 2 forbids any shuffled split. See D-1 for why test runs to 2025,
 #: and D-5 for why calibration owns 2016-2018 rather than sharing validation.
 TRAIN_SEASONS: Final[tuple[int, int]] = (2006, 2015)
@@ -91,14 +91,14 @@ VAL_SEASONS: Final[tuple[int, int]] = (2019, 2021)
 TEST_SEASONS: Final[tuple[int, int]] = (2022, 2025)
 
 #: How many trailing seasons the walk-forward harness gives its calibrator
-#: (D-26). Three, because that is what D-5 gave it on the frozen split — the
+#: (D-26). Three, because that is what D-5 gave it on the frozen split - the
 #: structure moves through time, it does not change shape. The seasons are held
 #: out of the base fit, exactly as 2016-2018 were.
 CALIB_WINDOW_SEASONS: Final[int] = 3
 
 # ---------------------------------------------------------- column selection
 
-#: 36 of 372 play-by-play columns. Selected at load time — the full frame is
+#: 36 of 372 play-by-play columns. Selected at load time - the full frame is
 #: ~50 MB/season on disk and we need roughly a tenth of it.
 #:
 #: `vegas_wp` / `wp` were deliberately absent at Phase 1 (D-3) and were added at
@@ -117,7 +117,7 @@ PBP_COLUMNS: Final[tuple[str, ...]] = (
     "posteam_type",
     "home_team",
     "away_team",
-    # play classification — these drive the rate denominators
+    # play classification - these drive the rate denominators
     "play",
     "special",
     "pass",
@@ -154,7 +154,7 @@ PBP_COLUMNS: Final[tuple[str, ...]] = (
     "wp",
 )
 
-#: 29 of 46 schedule columns. Situational features come free here — the spec is
+#: 29 of 46 schedule columns. Situational features come free here - the spec is
 #: explicit that these should not be recomputed from play-by-play.
 SCHEDULE_COLUMNS: Final[tuple[str, ...]] = (
     "game_id",
@@ -216,7 +216,7 @@ ROLLING_WINDOWS: Final[tuple[int, ...]] = (4, 8)
 WP_BAND: Final[tuple[float, float]] = (0.05, 0.95)
 
 #: Statistics that get a season-to-date window on top of the 4/8-game ones.
-#: Restricted on purpose — a season-to-date third-down-attempt *count* is noise,
+#: Restricted on purpose - a season-to-date third-down-attempt *count* is noise,
 #: and rolling all 23 statistics would add 46 columns for maybe three signals.
 STD_WINDOW_STATS: Final[tuple[str, ...]] = (
     "epa_per_play",
@@ -243,7 +243,7 @@ STD_WINDOW_STATS: Final[tuple[str, ...]] = (
 #     20  0.6262 *0.6259* 0.6265    0.6389  0.6389  0.6396
 #     24  0.6272  0.6269  0.6275    0.6364  0.6363  0.6371
 #
-# The MOV multiplier is worth ~0.013 of log loss — an order of magnitude more
+# The MOV multiplier is worth ~0.013 of log loss - an order of magnitude more
 # than any K or HFA choice, which move it by ~0.003 across the whole grid. The
 # surface is flat enough around the winner that the exact cell barely matters;
 # turning MOV off is the only decision here that would cost anything.
@@ -251,7 +251,7 @@ STD_WINDOW_STATS: Final[tuple[str, ...]] = (
 #: Starting rating for a team with no history.
 ELO_INIT: Final[float] = 1500.0
 
-#: Expansion teams enter below the mean rather than at it — HOU 2002 is the only
+#: Expansion teams enter below the mean rather than at it - HOU 2002 is the only
 #: case inside the ingest range, and a 1500 expansion team would be rated as an
 #: average one for most of its first season.
 ELO_EXPANSION_INIT: Final[float] = 1300.0
@@ -286,7 +286,7 @@ ELO_SEASON_REGRESSION: Final[float] = 1.0 / 3.0
 #: Frozen rather than recomputed at build time for two reasons. It is a quantity
 #: fitted on the training set, so refitting it on every build makes the feature
 #: depend on data that has nothing to do with the game being predicted. And the
-#: two matrices must differ in exactly one thing — the win-probability filter —
+#: two matrices must differ in exactly one thing - the win-probability filter -
 #: for D-9 to be a controlled comparison, which a per-table factor would break.
 TURNOVER_RELIABILITY: Final[float] = 0.1328
 
@@ -303,7 +303,7 @@ POSTSEASON_TYPES: Final[frozenset[str]] = frozenset({"WC", "DIV", "CON", "SB"})
 #: Canonicalising to the *current* code is the deliberate choice: it keeps each
 #: franchise's history as one continuous series, so rolling windows and Elo
 #: ratings carry across a relocation instead of resetting. `game_id` keeps the
-#: historical abbreviation and is not rewritten — it agrees across both sources
+#: historical abbreviation and is not rewritten - it agrees across both sources
 #: already, and it is only a key.
 TEAM_ALIASES: Final[dict[str, str]] = {
     "OAK": "LV",   # Raiders -> Las Vegas, 2020
@@ -314,7 +314,7 @@ TEAM_ALIASES: Final[dict[str, str]] = {
 
 # ------------------------------------------------------------------- models
 #
-# Frozen from `scripts/tune_models.py` — the D-11 pattern extended to the model
+# Frozen from `scripts/tune_models.py` - the D-11 pattern extended to the model
 # stack (D-16). Every grid is scored by log loss over a five-fold
 # `TimeSeriesSplit` **inside the training seasons only** (2006-2015). Neither
 # the calibration split nor validation sees a hyperparameter decision, so a
@@ -343,7 +343,7 @@ N_JOBS: Final[int] = 4
 # less capacity than its defaults give it.** A first pass gridded the three
 # boosters over learning rate {0.01, 0.03, 0.05} and depth {2, 3, 4} and put
 # every winner on the lowest-capacity corner with loss rising monotonically
-# away from it — a grid saying its own optimum lay outside itself. The ranges
+# away from it - a grid saying its own optimum lay outside itself. The ranges
 # were extended downward once, before anything was frozen, and every winner
 # below is now interior to its grid. On 2,670 games that is the whole story:
 # XGBoost's best tree is a *stump*, and the forest's best depth is 4.
@@ -359,13 +359,13 @@ N_JOBS: Final[int] = 4
 #: library default, except the housekeeping arguments (seeds, thread counts,
 #: verbosity) that :mod:`nflpred.modeling.base` sets on every fit.
 #:
-#: logreg — C, on 16 columns. Interior winner; the surface is nearly flat, with
+#: logreg - C, on 16 columns. Interior winner; the surface is nearly flat, with
 #: 0.0021 of log loss between the best and worst cell:
 #:
 #:     C          0.01    0.03    0.1     0.3     1.0     3.0
 #:     log loss   0.6250 *0.6240* 0.6245  0.6252  0.6258  0.6261
 #:
-#: random forest — 500 trees fixed, max_depth x min_samples_leaf, on 16
+#: random forest - 500 trees fixed, max_depth x min_samples_leaf, on 16
 #: columns. The flattest grid of the five: 0.0031 separates all 20 cells, and
 #: the only choice that costs anything is letting the trees grow unbounded at
 #: a small leaf size (None/5, 0.6297). Depth 4 wins on both feature sets.
@@ -377,7 +377,7 @@ N_JOBS: Final[int] = 4
 #:     depth 8  0.6277  0.6272  0.6274  0.6270
 #:     None     0.6297  0.6280  0.6273  0.6269
 #:
-#: xgboost — 400 trees fixed, learning_rate x max_depth at subsample 0.8 (which
+#: xgboost - 400 trees fixed, learning_rate x max_depth at subsample 0.8 (which
 #: beat 1.0 in 8 of 9 pairs), on 16 columns. Depth 1 is the floor of the grid
 #: because it is the floor of the model: a depth-1 tree is a stump, and the
 #: data preferring stumps over depth-2 is the finding, not a truncation.
@@ -387,7 +387,7 @@ N_JOBS: Final[int] = 4
 #:     depth 2  0.6356    0.6292   0.6404
 #:     depth 3  0.6345    0.6328   0.6534
 #:
-#: lightgbm — 400 trees fixed, learning_rate x num_leaves at
+#: lightgbm - 400 trees fixed, learning_rate x num_leaves at
 #: min_child_samples 40, on 16 columns:
 #:
 #:               lr=0.003  0.01     0.03
@@ -395,7 +395,7 @@ N_JOBS: Final[int] = 4
 #:     leaves 4  0.6369   *0.6293*  0.6441
 #:     leaves 8  0.6374    0.6379   0.6681
 #:
-#: catboost — 400 iterations fixed, learning_rate x depth at l2_leaf_reg 3,
+#: catboost - 400 iterations fixed, learning_rate x depth at l2_leaf_reg 3,
 #: on 16 columns:
 #:
 #:              lr=0.003  0.01     0.03
@@ -423,14 +423,14 @@ MODEL_PARAMS: Final[dict[str, dict[str, object]]] = {
 
 #: Where the 29-column grid disagreed with the 16-column one, keyed by feature
 #: count. Only two settings moved, both toward *less* regularisation on the
-#: wider set — which is what one would expect if the extra 13 columns are
+#: wider set - which is what one would expect if the extra 13 columns are
 #: mostly noise the estimator has to average away rather than signal.
 #:
 #:     logreg      C 0.03 -> 0.01                  (0.6265 vs 0.6280 at 0.03)
 #:     lightgbm    min_child_samples 40 -> 20      (0.6332 vs 0.6368 at 40)
 #:
 #: Random forest, XGBoost and CatBoost picked identical cells on both sets.
-#: Feature sets with no entry here — `wide_features()` at 104 — use the frozen
+#: Feature sets with no entry here - `wide_features()` at 104 - use the frozen
 #: constants above untuned, which is a handicap worth stating whenever that row
 #: is reported.
 MODEL_PARAM_OVERRIDES: Final[dict[int, dict[str, dict[str, object]]]] = {
@@ -443,7 +443,7 @@ MODEL_PARAM_OVERRIDES: Final[dict[int, dict[str, dict[str, object]]]] = {
 
 # ------------------------------------------------------------------ recency
 #
-# Frozen from `scripts/tune_recency.py` — the D-11 / D-16 pattern applied to the
+# Frozen from `scripts/tune_recency.py` - the D-11 / D-16 pattern applied to the
 # one hyperparameter Phase 7 introduces. The grid is scored by log loss of the
 # headline stack over a **walk-forward** across the validation seasons only
 # (2019-2021, every fit on games completed before the target week), so the test
@@ -451,7 +451,7 @@ MODEL_PARAM_OVERRIDES: Final[dict[int, dict[str, dict[str, object]]]] = {
 #
 # Grid result (validation 2019-2021, 821 games, 64 target weeks per cell,
 # refit every week). `eff_n` is Kish's effective sample size at the last fit of
-# the walk, out of the 4,291 completed games that fit could see — the cost side
+# the walk, out of the 4,291 completed games that fit could see - the cost side
 # of the trade, since a shorter half-life buys recency by throwing sample away.
 #
 #     half_life   log loss   brier    accuracy   eff_n / 4,291
@@ -465,9 +465,9 @@ MODEL_PARAM_OVERRIDES: Final[dict[int, dict[str, dict[str, object]]]] = {
 #     100         0.6321     0.2204   0.6474     3,027
 #     none        0.6326     0.2206   0.6425     4,291
 #
-# **The weighting wins, and it wins by 0.0008 of log loss.** That is thin — twice
+# **The weighting wins, and it wins by 0.0008 of log loss.** That is thin - twice
 # the ensemble's own margin over the best single model (D-21), which this project
-# already reports as barely worth its complexity — but it is consistent: 60 beats
+# already reports as barely worth its complexity - but it is consistent: 60 beats
 # the unweighted control on log loss, Brier *and* accuracy, and the surface has
 # one shallow minimum rather than the ragged profile of noise.
 #
@@ -484,12 +484,12 @@ MODEL_PARAM_OVERRIDES: Final[dict[int, dict[str, dict[str, object]]]] = {
 #
 # **Below ~20 the trade turns decisively bad.** At half-life 10 the fit is worth
 # 385 games and loses 0.0057 to the control. That is the risk the plan named
-# before the run: an effective sample well under 2,670 games, and it is real —
+# before the run: an effective sample well under 2,670 games, and it is real -
 # it just does not bite until the half-life is well short of where the optimum
 # sits.
 
 #: Half-life of the exponential sample-weight decay, in **league weeks** (see
-#: `nflpred.features.build.league_week_index` — the offseason is not counted, so 60
+#: `nflpred.features.build.league_week_index` - the offseason is not counted, so 60
 #: is roughly three seasons of football, not fourteen months). ``None`` turns the
 #: weighting off and is the unweighted control, which the grid above beats.
 RECENCY_HALF_LIFE: Final[float | None] = 60.0

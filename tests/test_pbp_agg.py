@@ -2,7 +2,7 @@
 
 Two kinds of test here. The synthetic ones pin down the rate denominators
 against hand-built play-by-play, so a change in filtering fails loudly. The
-rest assert invariants over the real built table — cheap, and they catch join
+rest assert invariants over the real built table - cheap, and they catch join
 errors that unit tests on toy data never would.
 """
 
@@ -24,7 +24,7 @@ GAMES_WITHOUT_PBP: frozenset[str] = frozenset({
 
 #: Games whose play-by-play score columns disagree with the schedule's final
 #: score. The schedule is authoritative and supplies the label, so these do not
-#: affect the target — `pbp_points` is only a cross-check. Pinned so that a
+#: affect the target - `pbp_points` is only a cross-check. Pinned so that a
 #: *new* mismatch, which would mean a broken join, still fails the suite.
 GAMES_WITH_BAD_PBP_SCORES: frozenset[str] = frozenset({
     "2001_01_PIT_JAX", "2001_02_TEN_JAX", "2001_03_CLE_JAX", "2001_06_BUF_JAX",
@@ -230,7 +230,7 @@ def test_cpoe_absent_before_2006_and_present_after(team_game):
     late = team_game.filter(pl.col("season") >= MATRIX_START_SEASON)
 
     assert early["off_cpoe"].is_null().all()
-    # Five 2006 games at Arrowhead have no charting data upstream — 0.1% of rows.
+    # Five 2006 games at Arrowhead have no charting data upstream - 0.1% of rows.
     assert late["off_cpoe"].null_count() / late.height < 0.005
 
 

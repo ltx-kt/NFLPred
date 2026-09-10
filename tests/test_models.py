@@ -1,7 +1,7 @@
 """The Phase 4 model layer, with the two claims that are easy to get wrong.
 
 Most of what `src/nflpred/modeling/base.py` does would be *visibly* broken if it were
-broken — a model that failed to fit raises. Two things would not be visible:
+broken - a model that failed to fit raises. Two things would not be visible:
 
 **Sample weights that go nowhere.** D-4 encodes a tie as two half-weight rows,
 and a `Pipeline` silently ignores a ``sample_weight`` passed to the wrong place.
@@ -97,7 +97,7 @@ def test_every_estimator_honours_sample_weight(name, splits):
 
     assert not np.allclose(evenly_probabilities, unevenly_probabilities), (
         f"{name} produced identical predictions with and without a 1000x weight "
-        f"imbalance — sample_weight is being dropped, and every tie in the "
+        f"imbalance - sample_weight is being dropped, and every tie in the "
         f"training set is being counted as two whole games."
     )
 
@@ -123,7 +123,7 @@ def test_inner_estimator_returns_the_fitted_base(name, models, splits):
     base = inner_estimator(models[name])
 
     assert type(base) is type(build_models(CORE_FEATURES)[name])
-    # Fitted, and usable on its own — Phase 6 scores it without the calibrator.
+    # Fitted, and usable on its own - Phase 6 scores it without the calibrator.
     raw = base.predict_proba(val.select(CORE_FEATURES).to_numpy().astype(float))[:, 1]
     assert raw.shape == (val.height,)
     assert ((raw > 0) & (raw < 1)).all()
@@ -149,7 +149,7 @@ def test_calibrating_a_frozen_base_is_quiet(splits):
 
 def test_calibrator_is_fitted_on_the_calibration_split_only(splits):
     """Feeding a different calibration split moves the calibrated probabilities
-    but leaves the base untouched — the two fits are genuinely separate."""
+    but leaves the base untouched - the two fits are genuinely separate."""
     train, calib, val = splits
     estimator = build_models(CORE_FEATURES)["logreg"]
 
@@ -252,7 +252,7 @@ def _round_trip(models, matrix, tmp_path):
 def test_fitting_ignores_the_test_split(matrix, splits):
     """Runtime half: poison every test row and nothing downstream moves.
 
-    Stronger than reading the code — it would catch a join, a global mean, or a
+    Stronger than reading the code - it would catch a join, a global mean, or a
     scaler that pulled the whole matrix in without asking for a split.
     """
     _, _, val = splits
@@ -277,7 +277,7 @@ def test_fitting_ignores_the_test_split(matrix, splits):
         np.testing.assert_array_equal(
             home_win_probability(clean_models[name], val, CORE_FEATURES),
             home_win_probability(poisoned_models[name], val, CORE_FEATURES),
-            err_msg=f"{name} changed when the test split was rewritten — it is reading test rows",
+            err_msg=f"{name} changed when the test split was rewritten - it is reading test rows",
         )
 
 

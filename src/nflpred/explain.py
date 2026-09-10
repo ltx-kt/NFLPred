@@ -1,4 +1,4 @@
-"""Why the ensemble picked what it picked — SHAP attribution, in plain English.
+"""Why the ensemble picked what it picked - SHAP attribution, in plain English.
 
 The README's first sentence promises a system that predicts winners *and*
 explains each pick. Phases 2-5 built the prediction half. This is the other one.
@@ -7,7 +7,7 @@ It arrives at an awkward moment, and that shapes what it is. Phase 5 found the
 ensemble worth 0.0004 of log loss over the best single model, because the six
 members' validation probabilities correlate at a mean of 0.959 (D-21). The
 system's accuracy is 0.63 against a market at 0.6462. So this module is not
-decorating a strong model — it is the part that tells a user **how thin the read
+decorating a strong model - it is the part that tells a user **how thin the read
 is**, which most weeks is the honest headline. The spec's honesty constraints
 are the requirement here, not the caveat.
 
@@ -22,7 +22,7 @@ tell. Each member is attributed in its own natural output space:
     xgboost      shap.TreeExplainer                             log-odds margin
     lightgbm     shap.TreeExplainer                             log-odds margin
     catboost     shap.TreeExplainer                             log-odds margin
-    elo          none — the rating *is* the explanation         probability
+    elo          none - the rating *is* the explanation         probability
 
 logreg is analytic rather than `LinearExplainer` because the spec permits it
 ("or just coefficient x standardized value") and because with the
@@ -32,7 +32,7 @@ no background sample.
 **Combining into one ensemble attribution.** The spec asks for per-model SHAP
 combined by the meta-learner's coefficients, "labelled explicitly as an
 approximation". The naive chain rule (``coef_m * p_m(1-p_m) * shap_mj``) leaves
-a Taylor error in the total, because SHAP does not hand back a derivative — it
+a Taylor error in the total, because SHAP does not hand back a derivative - it
 hands back an exact finite difference. The **secant** slope removes it::
 
     member m has base b_m and total attribution  S_m = sum_j shap_mj
@@ -46,13 +46,13 @@ exactly::
 
     sum_j contribution_j == logit(p_ensemble) - (intercept + sum_m coef_m * p0_m)
 
-What remains an approximation — and is labelled as one in every record — is the
+What remains an approximation - and is labelled as one in every record - is the
 *allocation within a member*: a constant secant slope spreads the sigmoid's
 curvature evenly across that member's features. `scripts/phase6_explanations.py`
 prints the reconciliation residual so the claim is a number, not a disclaimer.
 
 **The one merge.** ``elo_diff`` and ``elo_prob`` are the same information under
-two names — `nflpred.features.build` says so outright, and the two differ only in
+two names - `nflpred.features.build` says so outright, and the two differ only in
 whether home-field advantage is folded in. The five sklearn members see
 ``elo_diff``; the Elo member *is* ``elo_prob``. Ranked separately they land in
 the top three together in three games out of four, so the narrative would read
@@ -67,7 +67,7 @@ so its meta-learner consumed uncalibrated probabilities. The per-game record
 reports the *calibrated* votes instead, and D-18 puts ~0.015 between them. Every
 slope here is therefore computed from the attribution's own base value rather
 than read out of the record, and :func:`explain_game` takes votes from the
-record only to name dissenters — never to do arithmetic.
+record only to name dissenters - never to do arithmetic.
 """
 
 from __future__ import annotations
@@ -95,12 +95,12 @@ from nflpred.modeling.ensemble import (
 MARGIN: Final[str] = "margin"
 PROBABILITY: Final[str] = "probability"
 
-#: Below this the secant slope is undefined — and the member's probability has
+#: Below this the secant slope is undefined - and the member's probability has
 #: not moved either, so its contribution is zero rather than a divide-by-zero.
 _FLAT: Final[float] = 1e-12
 
 #: A contribution smaller than this in log-odds is not a factor worth speaking.
-#: Roughly 0.0025 of probability at the middle of the range — below that, naming
+#: Roughly 0.0025 of probability at the middle of the range - below that, naming
 #: something as a reason overstates it. Set high enough that a lopsided game can
 #: legitimately return an **empty** "against" list rather than scraping one up:
 #: on a 6/6 blowout there is genuinely nothing cutting the other way, and saying
@@ -160,7 +160,7 @@ class Feature:
     * ``away_pass_epa_matchup_r8`` / ``away_rush_epa_matchup_r8`` are the away
       offence against the home defence, so positive is bad for the home team.
     * ``home_backup_qb_starting`` at 1 is bad for the home team while
-      ``away_backup_qb_starting`` at 1 is good for it — deliberately asymmetric
+      ``away_backup_qb_starting`` at 1 is good for it - deliberately asymmetric
       columns, and differencing them would have said they were the same event.
 
     ``div_game``, ``is_dome``, ``is_neutral_site`` and ``wind`` favour nobody and
@@ -275,7 +275,7 @@ FEATURE_GLOSSARY: Final[dict[str, Feature]] = {
     ),
 }
 
-#: Formatters, one per ``unit``. A magnitude is always spoken unsigned — the
+#: Formatters, one per ``unit``. A magnitude is always spoken unsigned - the
 #: team it belongs to is named instead, which is unambiguous where a bare
 #: "-0.14 for Buffalo" is not.
 _FORMATS: Final[dict[str, str]] = {
@@ -346,7 +346,7 @@ class Attribution:
         return self.values.sum(axis=1)
 
     def probabilities(self) -> tuple[np.ndarray, float]:
-        """``(p_after, p_base)`` — where this member's output sits, and its origin."""
+        """``(p_after, p_base)`` - where this member's output sits, and its origin."""
         if self.space == MARGIN:
             return _sigmoid(self.base + self.totals()), float(_sigmoid(self.base))
         return self.base + self.totals(), float(self.base)
@@ -372,7 +372,7 @@ def reference(name: str, estimator: ClassifierMixin, x: np.ndarray) -> np.ndarra
 
     This is the additivity target, and it is deliberately each library's own
     uncalibrated call rather than anything routed through
-    `CalibratedClassifierCV` — a member that fails to reconcile against this is
+    `CalibratedClassifierCV` - a member that fails to reconcile against this is
     almost always an explainer pointed at the calibrated wrapper.
     """
     if name == "logreg":
@@ -446,7 +446,7 @@ def _normalise(
 
     Returns ``(values, base)`` with ``values.sum(1) + base == reference``. The
     base is collapsed to a scalar only after checking it is constant across
-    rows — a per-row base means the explainer is doing something this module
+    rows - a per-row base means the explainer is doing something this module
     does not model, and quietly averaging it would hide that.
     """
     atol = ADDITIVITY_ATOL[name]
@@ -467,7 +467,7 @@ def _normalise(
     msg = (
         f"{name}: no reading of the SHAP output reconciles with its own raw "
         f"output (best residual {min(errors, default=float('nan')):.3e}, "
-        f"tolerance {atol:.0e}). The explainer is pointed at the wrong object — "
+        f"tolerance {atol:.0e}). The explainer is pointed at the wrong object - "
         f"most likely the calibrated wrapper rather than inner_estimator()."
     )
     raise ValueError(msg)
@@ -478,8 +478,8 @@ def build_explainers(
 ) -> dict[str, Explainer]:
     """One explainer per member. Construction is the expensive part, not use.
 
-    ``estimators`` are the **raw** inner estimators — the objects the headline
-    stack's meta-learner actually consumed — keyed by project name. ``elo_base``
+    ``estimators`` are the **raw** inner estimators - the objects the headline
+    stack's meta-learner actually consumed - keyed by project name. ``elo_base``
     is the training-split mean of ``elo_prob``, which gives the Elo member the
     same kind of origin the tree explainers use: the model's expected output
     over the seasons it was built on.
@@ -502,7 +502,7 @@ def build_explainers(
             # Analytic, and exact: the scaler is already in the Pipeline, so the
             # contribution needs no background sample. The base is the
             # intercept, which sits within 4e-4 of the training-mean decision
-            # value — the same kind of origin the tree explainers report.
+            # value - the same kind of origin the tree explainers report.
             base = float(estimator.named_steps["lr"].intercept_[0])
             explainers[name] = Explainer(name, estimator, None, MARGIN, base)
             continue
@@ -653,12 +653,12 @@ def top_factors(
 
     **Two different orientations meet here, and conflating them prints prose
     that is backwards.** A contribution is in ensemble log-odds *for the home
-    team* — that is the quantity the additivity identity decomposes, so it is
+    team* - that is the quantity the additivity identity decomposes, so it is
     what the ``shap`` field reports. But "for" and "against" are relative to the
     **pick**, per the spec ("which features drove the pick, which cut against
     it"). On an away pick the two run opposite: a negative contribution is what
     supports the verdict. ``pick_is_home`` is what keeps them straight, and
-    without it every away pick — roughly two games in five — would file its
+    without it every away pick - roughly two games in five - would file its
     supporting factors under "against".
     """
     grouped: dict[str, dict[str, Any]] = {}
@@ -706,11 +706,11 @@ def confidence_drivers(
     Two of the spec's three data-quality checks cannot fire on this matrix, and
     saying so is more useful than emitting a flag that is always green:
 
-    * *"fewer than 4 games of rolling history"* — D-6 runs rolling windows
+    * *"fewer than 4 games of rolling history"* - D-6 runs rolling windows
       across season boundaries, so ``games_in_window_r4`` is 4 for every row in
       the matrix. Structurally dead. The live version of the same concern is
       early-season form being mostly last season's, which is what is reported.
-    * *"any feature with a null that had to be imputed"* — the 17 columns carry
+    * *"any feature with a null that had to be imputed"* - the 17 columns carry
       zero nulls in train, calib and validation. The check is kept, so it fires
       if that ever stops being true.
 
@@ -721,24 +721,24 @@ def confidence_drivers(
     pick = record["ensemble"]["pick"]
     # Quoted for the team actually picked, not for the home team. `probability`
     # is P(home win) everywhere in this project, so on an away pick the two are
-    # complements — and "favours DEN at 39.0%" is a sentence that reads as a
+    # complements - and "favours DEN at 39.0%" is a sentence that reads as a
     # contradiction.
     for_pick = probability if pick == record["home_team"] else 1.0 - probability
 
     if edge < NO_READ_EDGE:
         signal = (
-            f"no read — {probability:.1%} is within {NO_READ_EDGE:.2f} of a coin flip"
+            f"no read - {probability:.1%} is within {NO_READ_EDGE:.2f} of a coin flip"
         )
     elif edge < CONFIDENCE_BANDS[2][0]:
         # D-21: the two middle bands could not be told apart on validation, so
         # they are presented as one undifferentiated read. The bands themselves
-        # are untouched — the collapse is a narrative choice, not a refit.
+        # are untouched - the collapse is a narrative choice, not a refit.
         signal = (
-            f"thin edge — {for_pick:.1%} for {pick}; validation could not "
+            f"thin edge - {for_pick:.1%} for {pick}; validation could not "
             f"separate the two middle bands, so they are reported as one"
         )
     else:
-        signal = f"clear edge — {for_pick:.1%} for {pick}"
+        signal = f"clear edge - {for_pick:.1%} for {pick}"
 
     votes = record["model_votes"]
     agreed = sum(vote["pick"] == pick for vote in votes.values())
@@ -751,7 +751,7 @@ def confidence_drivers(
         dissenters = [n for n, v in votes.items() if v["pick"] != pick]
         agreement += f" ({', '.join(dissenters)} dissenting)"
     else:
-        agreement += " — unanimous, which is the sharper of the two drivers here"
+        agreement += " - unanimous, which is the sharper of the two drivers here"
 
     quality: list[str] = []
     week = int(row["week"])
@@ -772,9 +772,9 @@ def confidence_drivers(
         "signal_strength": signal,
         "model_agreement": agreement,
         "data_quality": (
-            "full — no early-season, quarterback or missing-input caveats"
+            "full - no early-season, quarterback or missing-input caveats"
             if not quality
-            else "reduced — " + "; ".join(quality)
+            else "reduced - " + "; ".join(quality)
         ),
     }
 
@@ -789,20 +789,20 @@ def dissent(
     """Which members disagree, and what each one is weighting to get there.
 
     Expected to be thin. D-21 measured the six members correlating at a mean of
-    0.959, so genuine per-model disagreement is rare — if every game produced a
+    0.959, so genuine per-model disagreement is rare - if every game produced a
     rich dissent paragraph, this function would be inventing a diversity the
     ensemble does not have.
 
     Votes come from the record, so this names exactly the dissenters the record
     shows. The *reason* comes from the member's own attribution, which is of the
-    same fitted model before its sigmoid — monotone, so the feature ranking is
+    same fitted model before its sigmoid - monotone, so the feature ranking is
     unchanged even though the probability is not.
     """
     pick = record["ensemble"]["pick"]
     home, away = record["home_team"], record["away_team"]
     dissenters = [n for n, v in record["model_votes"].items() if v["pick"] != pick]
     if not dissenters:
-        return f"none — all {len(record['model_votes'])} members pick {pick}."
+        return f"none - all {len(record['model_votes'])} members pick {pick}."
 
     parts: list[str] = []
     for name in dissenters:
@@ -830,7 +830,7 @@ def narrative(
     """Deterministic templates. No LLM, by requirement, not by preference.
 
     A stochastic generator would make it impossible to tell whether a changed
-    explanation reflects a changed model or just sampling noise — which is the
+    explanation reflects a changed model or just sampling noise - which is the
     whole reason the spec forbids one.
 
     Every phrase here describes **model behaviour**: what the model weights,
@@ -919,14 +919,14 @@ def explain_game(
     Returns the sub-dict rather than a whole record on purpose:
     `nflpred.modeling.ensemble.predict_records` owns the pick and this module owns the
     reason, and merging here would put a `shap` import in the prediction path.
-    :func:`explained_records` does the merge, which lands ``explanation`` last —
+    :func:`explained_records` does the merge, which lands ``explanation`` last -
     exactly where the spec's example has it.
 
     ``probability`` is the ensemble's **unrounded** output. It is a parameter
     rather than a read of ``record["ensemble"]["home_win_prob"]`` because that
     field is rounded to four places for display, and reconciling against it
     would report a residual of ~6e-05 that measures the rounding rather than the
-    attribution — burying the very thing the field exists to prove.
+    attribution - burying the very thing the field exists to prove.
     """
     home, away = record["home_team"], record["away_team"]
 
@@ -973,7 +973,7 @@ def explain_game(
         },
         "method": {
             "combination": (
-                "approximation — per-model SHAP combined by the meta-learner's "
+                "approximation - per-model SHAP combined by the meta-learner's "
                 "coefficients through a secant chain rule. The total is exact; what "
                 "is approximate is how each member's share is spread across its own "
                 "features, since one secant slope per member spreads the sigmoid's "
@@ -1012,7 +1012,7 @@ def explained_records(
 
     ``records``, ``frame`` and ``probability`` must be the same games in the
     same order, which they are when all three come from the same split frame.
-    ``probability`` is the ensemble's unrounded output — see
+    ``probability`` is the ensemble's unrounded output - see
     :func:`explain_game` for why it is not read back off the record.
     """
     x = frame.select(features).to_numpy().astype(float)

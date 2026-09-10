@@ -1,7 +1,7 @@
 """The live path, and the one test the whole phase rests on.
 
-Take a **completed** week. Strip it back to what was knowable before kickoff —
-no scores, no play-by-play, no box score — synthesize it exactly as
+Take a **completed** week. Strip it back to what was knowable before kickoff -
+no scores, no play-by-play, no box score - synthesize it exactly as
 :func:`nflpred.predict.week_frame` synthesizes a 2026 fixture, and demand that its
 ``ENSEMBLE_FEATURES`` row come back **identical** to the row the real matrix
 holds for the same game.
@@ -9,13 +9,13 @@ holds for the same game.
 That is train/serve skew measured rather than argued, and it is the whole
 justification for D-8's prior-starter proxy. If it fails, the live path is
 predicting on different numbers than it trained on and nothing downstream is
-trustworthy — every calibration curve, every SHAP attribution and every
+trustworthy - every calibration curve, every SHAP attribution and every
 confidence band would be describing a model being fed inputs it never saw.
 
 It is not a formality. This test is what found D-31: the quarterback composite
 resolved a projected starter's form by an as-of join at his own start, which is
 a row an unplayed fixture does not have, so all three ``qb_*`` columns came back
-one start stale — on every game, in exactly the direction that would never show
+one start stale - on every game, in exactly the direction that would never show
 up in a backtest.
 """
 
@@ -59,7 +59,7 @@ def as_if_unplayed(sources) -> tuple[pl.DataFrame, pl.DataFrame, list[str]]:
     Everything the week produced is removed from every source: the scores from
     the schedule, the plays from the play-by-play, the aggregates from the
     team-game table. What is left is what the system would have had on the
-    Thursday morning — and the synthesized rows are built the way
+    Thursday morning - and the synthesized rows are built the way
     `nflpred.predict.week_frame` builds them, from the same helper.
     """
     team_game, schedules, pbp = sources
@@ -112,7 +112,7 @@ def test_a_synthesized_week_matches_the_real_matrix_feature_for_feature(as_if_un
 
     for feature in ENSEMBLE_FEATURES:
         assert before[feature].to_list() == after[feature].to_list(), (
-            f"{feature} differs between the played and the pre-kickoff build — "
+            f"{feature} differs between the played and the pre-kickoff build - "
             f"the live path would predict on numbers the model never trained on"
         )
 
