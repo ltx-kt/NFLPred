@@ -59,41 +59,11 @@ class Outcome(BaseModel):
     pick_correct: float | None  # 1.0 hit, 0.0 miss, 0.5 tie; null if pick was a "no read"
 
 
-class GameRow(BaseModel):
-    """One row of the weekly board."""
+class GameBase(BaseModel):
+    """The fields the weekly board and the single-game page both carry.
 
-    game_id: str
-    model_version: str
-    config: str
-    generated_at: str
-    season: int
-    week: int
-    gameday: str
-    home_team: str
-    away_team: str
-    pick: str
-    home_win_prob: float
-    confidence: str
-    agreement: str
-    elo_prob: float | None
-    market_prob: float | None
-    members: list[MemberVote]
-    outcome: Outcome | None
-    has_explanation: bool
-
-
-class Week(BaseModel):
-    ref: WeekRef
-    games: list[GameRow]
-
-
-class GameDetail(BaseModel):
-    """A single game: the flat row, the full output-contract record, the outcome.
-
-    ``record`` is the JSON `nflpred.modeling.ensemble.predict_records` produced, with
-    the Phase 6 ``explanation`` key merged in when the week was run with
-    ``--explain``. Passed through untouched rather than re-modelled - the
-    contract is owned by `nflpred.modeling.ensemble`, not by this layer.
+    `queries._base_row` builds exactly these; `GameRow` and `GameDetail` each
+    add two more. Mirrored in `frontend/src/api/types.ts` as `GamePrediction`.
     """
 
     game_id: str
@@ -112,6 +82,29 @@ class GameDetail(BaseModel):
     market_prob: float | None
     members: list[MemberVote]
     outcome: Outcome | None
+
+
+class GameRow(GameBase):
+    """One row of the weekly board."""
+
+    generated_at: str
+    has_explanation: bool
+
+
+class Week(BaseModel):
+    ref: WeekRef
+    games: list[GameRow]
+
+
+class GameDetail(GameBase):
+    """A single game: the flat row, the full output-contract record, the outcome.
+
+    ``record`` is the JSON `nflpred.modeling.ensemble.predict_records` produced, with
+    the Phase 6 ``explanation`` key merged in when the week was run with
+    ``--explain``. Passed through untouched rather than re-modelled - the
+    contract is owned by `nflpred.modeling.ensemble`, not by this layer.
+    """
+
     record: dict
     available_versions: list[str]
 
@@ -126,7 +119,7 @@ class MetricRow(BaseModel):
 
 class SeasonMetric(BaseModel):
     season: int
-    week: int | None
+    week: int
     metrics: list[MetricRow]
 
 

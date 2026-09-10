@@ -173,3 +173,18 @@ def test_spa_catch_all_does_not_serve_files_outside_the_build_tree() -> None:
     assert resp.status_code == 200
     assert resp.content == index_bytes
     assert b"[project]" not in resp.content
+
+
+def test_metric_row_schema_matches_metrics_table_columns() -> None:
+    """`MetricRow` is a hand-written mirror of `evaluate.metrics_table`'s output.
+
+    Nothing else catches a column rename on either side.
+    """
+    import numpy as np
+
+    from nflpred.api.schemas import MetricRow
+    from nflpred.evaluate import metrics_table
+
+    y = np.array([1.0, 0.0, 1.0, 0.0])
+    table = metrics_table([("m", y, np.array([0.6, 0.4, 0.7, 0.3]))])
+    assert set(MetricRow.model_fields) == set(table.columns)

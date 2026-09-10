@@ -47,11 +47,12 @@ export interface Outcome {
   pick_correct: number | null; // 1.0 hit, 0.0 miss, 0.5 tie, null if no-read
 }
 
-export interface GameRow {
+// The fields the weekly board and the single-game page both carry. Mirrors
+// schemas.py GameBase; GameRow and GameDetail each add two more.
+export interface GamePrediction {
   game_id: string;
   model_version: string;
   config: string;
-  generated_at: string;
   season: number;
   week: number;
   gameday: string;
@@ -65,6 +66,10 @@ export interface GameRow {
   market_prob: number | null;
   members: MemberVote[];
   outcome: Outcome | null;
+}
+
+export interface GameRow extends GamePrediction {
+  generated_at: string;
   has_explanation: boolean;
 }
 
@@ -103,23 +108,7 @@ export interface Explanation {
   [k: string]: unknown;
 }
 
-export interface GameDetail {
-  game_id: string;
-  model_version: string;
-  config: string;
-  season: number;
-  week: number;
-  gameday: string;
-  home_team: string;
-  away_team: string;
-  pick: string;
-  home_win_prob: number;
-  confidence: string;
-  agreement: string;
-  elo_prob: number | null;
-  market_prob: number | null;
-  members: MemberVote[];
-  outcome: Outcome | null;
+export interface GameDetail extends GamePrediction {
   record: EnsembleRecord;
   available_versions: string[];
 }
@@ -134,7 +123,7 @@ export interface MetricRow {
 
 export interface SeasonMetric {
   season: number;
-  week: number | null;
+  week: number;
   metrics: MetricRow[];
 }
 

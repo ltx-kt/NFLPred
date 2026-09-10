@@ -46,7 +46,7 @@ export function AccuracyTrendChart({
 
     return byWeek.map((wk) => {
       const point: Record<string, number | string> = {
-        x: `${String(wk.season).slice(2)}w${wk.week ?? ""}`,
+        x: `${String(wk.season).slice(2)}w${wk.week}`,
       };
       for (const s of SERIES) {
         const row = wk.metrics.find((m) => m.model === NAME_IN_ROW[s.key]);

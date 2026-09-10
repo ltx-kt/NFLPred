@@ -14,10 +14,14 @@ import sqlite3
 from typing import Any
 
 from nflpred.config import LIVE_SEASON
+from nflpred.predlog import config_suffixes, suffix_of
 
-
-def _suffix(model_version: str) -> str:
-    return model_version.rsplit("-", 1)[-1]
+#: One game row joined to its outcome. The WHERE clause is the only thing that
+#: differs between the board query and the single-game query.
+_GAME_SQL = (
+    "SELECT p.*, o.home_score, o.away_score, o.home_win "
+    "FROM predictions p LEFT JOIN outcomes o USING (game_id) "
+)
 
 
 def _pick_correct(pick: str, home_team: str, home_win: float | None) -> float | None:
@@ -76,18 +80,10 @@ def index(connection: sqlite3.Connection) -> dict[str, Any]:
         newest = max(weeks_flat, key=lambda w: (w["season"], w["week"]))
         latest = {k: newest[k] for k in ("season", "week", "kind", "n_games", "n_settled")}
 
-    suffixes = []
-    for row in connection.execute(
-        "SELECT model_version FROM runs ORDER BY generated_at DESC, season DESC, week DESC"
-    ):
-        suffix = _suffix(row["model_version"])
-        if suffix not in suffixes:
-            suffixes.append(suffix)
-
     return {
         "seasons": list(seasons.values()),
         "latest": latest,
-        "config_suffixes": suffixes,
+        "config_suffixes": config_suffixes(connection),
         "live_season": LIVE_SEASON,
     }
 
@@ -118,6 +114,32 @@ def _outcome_of(row: sqlite3.Row) -> dict | None:
     }
 
 
+def _base_row(connection: sqlite3.Connection, row: sqlite3.Row) -> dict[str, Any]:
+    """The fields the weekly board and the single-game page both carry.
+
+    ``week()`` adds ``generated_at`` and ``has_explanation``; ``game()`` adds
+    ``record`` and ``available_versions``.
+    """
+    return {
+        "game_id": row["game_id"],
+        "model_version": row["model_version"],
+        "config": suffix_of(row["model_version"]),
+        "season": int(row["season"]),
+        "week": int(row["week"]),
+        "gameday": row["gameday"],
+        "home_team": row["home_team"],
+        "away_team": row["away_team"],
+        "pick": row["pick"],
+        "home_win_prob": row["home_win_prob"],
+        "confidence": row["confidence"],
+        "agreement": row["agreement"],
+        "elo_prob": row["elo_prob"],
+        "market_prob": row["market_prob"],
+        "members": _members(connection, row["game_id"], row["model_version"]),
+        "outcome": _outcome_of(row),
+    }
+
+
 def week(connection: sqlite3.Connection, season: int, week_no: int) -> dict[str, Any] | None:
     """One week's board: every predicted game, its member votes, its outcome.
 
@@ -126,13 +148,8 @@ def week(connection: sqlite3.Connection, season: int, week_no: int) -> dict[str,
     the CLI's picks table would show on a rerun.
     """
     game_rows = connection.execute(
-        """
-        SELECT p.*, o.home_score, o.away_score, o.home_win
-        FROM predictions p
-        LEFT JOIN outcomes o USING (game_id)
-        WHERE p.season = ? AND p.week = ?
-        ORDER BY p.gameday, p.game_id, p.generated_at DESC
-        """,
+        _GAME_SQL + "WHERE p.season = ? AND p.week = ? "
+        "ORDER BY p.gameday, p.game_id, p.generated_at DESC",
         (season, week_no),
     ).fetchall()
     if not game_rows:
@@ -145,28 +162,13 @@ def week(connection: sqlite3.Connection, season: int, week_no: int) -> dict[str,
         if row["game_id"] in seen:
             continue
         seen.add(row["game_id"])
-        outcome = _outcome_of(row)
-        n_settled += outcome is not None
+        base = _base_row(connection, row)
+        n_settled += base["outcome"] is not None
         record = json.loads(row["record"])
         games.append(
             {
-                "game_id": row["game_id"],
-                "model_version": row["model_version"],
-                "config": _suffix(row["model_version"]),
+                **base,
                 "generated_at": row["generated_at"],
-                "season": int(row["season"]),
-                "week": int(row["week"]),
-                "gameday": row["gameday"],
-                "home_team": row["home_team"],
-                "away_team": row["away_team"],
-                "pick": row["pick"],
-                "home_win_prob": row["home_win_prob"],
-                "confidence": row["confidence"],
-                "agreement": row["agreement"],
-                "elo_prob": row["elo_prob"],
-                "market_prob": row["market_prob"],
-                "members": _members(connection, row["game_id"], row["model_version"]),
-                "outcome": outcome,
                 "has_explanation": "explanation" in record,
             }
         )
@@ -203,32 +205,12 @@ def game(
         return None
 
     row = connection.execute(
-        """
-        SELECT p.*, o.home_score, o.away_score, o.home_win
-        FROM predictions p
-        LEFT JOIN outcomes o USING (game_id)
-        WHERE p.game_id = ? AND p.model_version = ?
-        """,
+        _GAME_SQL + "WHERE p.game_id = ? AND p.model_version = ?",
         (game_id, chosen),
     ).fetchone()
 
     return {
-        "game_id": row["game_id"],
-        "model_version": row["model_version"],
-        "config": _suffix(row["model_version"]),
-        "season": int(row["season"]),
-        "week": int(row["week"]),
-        "gameday": row["gameday"],
-        "home_team": row["home_team"],
-        "away_team": row["away_team"],
-        "pick": row["pick"],
-        "home_win_prob": row["home_win_prob"],
-        "confidence": row["confidence"],
-        "agreement": row["agreement"],
-        "elo_prob": row["elo_prob"],
-        "market_prob": row["market_prob"],
-        "members": _members(connection, game_id, chosen),
-        "outcome": _outcome_of(row),
+        **_base_row(connection, row),
         "record": json.loads(row["record"]),
         "available_versions": versions,
     }

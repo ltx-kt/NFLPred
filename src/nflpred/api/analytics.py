@@ -84,25 +84,22 @@ def _comparator_entries(frame: pl.DataFrame) -> list[tuple[str, np.ndarray, np.n
     ]
 
 
-def _rows(table: pl.DataFrame) -> list[dict]:
-    return table.to_dicts()
-
-
 def performance(
     connection: sqlite3.Connection, *, config: str | None, season: int | None
 ) -> dict:
     """Ensemble vs Elo vs market over settled games, overall and per season-week."""
     frame, label = _scoped_frame(connection, config, season)
 
+    result: dict = {
+        "config": label,
+        "n_settled": frame.height,
+        "overall": [],
+        "by_week": [],
+        "accuracy_ceiling": ACCURACY_CEILING,
+        "market_band": list(MARKET_BAND),
+    }
     if frame.is_empty():
-        return {
-            "config": label,
-            "n_settled": 0,
-            "overall": [],
-            "by_week": [],
-            "accuracy_ceiling": ACCURACY_CEILING,
-            "market_band": list(MARKET_BAND),
-        }
+        return result
 
     by_week = []
     for (yr, wk), group in sorted(
@@ -112,17 +109,13 @@ def performance(
             {
                 "season": int(yr),
                 "week": int(wk),
-                "metrics": _rows(metrics_table(_comparator_entries(group))),
+                "metrics": metrics_table(_comparator_entries(group)).to_dicts(),
             }
         )
 
-    return {
-        "config": label,
-        "n_settled": frame.height,
-        "overall": _rows(metrics_table(_comparator_entries(frame))),
+    return result | {
+        "overall": metrics_table(_comparator_entries(frame)).to_dicts(),
         "by_week": by_week,
-        "accuracy_ceiling": ACCURACY_CEILING,
-        "market_band": list(MARKET_BAND),
     }
 
 
