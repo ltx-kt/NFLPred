@@ -125,10 +125,24 @@ def metrics_table(entries: Sequence[tuple[str, np.ndarray, np.ndarray]]) -> pl.D
     )
 
 
+def _exact_accuracy(
+    entries: Sequence[tuple[str, np.ndarray, np.ndarray]],
+) -> dict[str, float]:
+    """Per-model accuracy, unrounded, with the same null-drop as `metrics_table`."""
+    out: dict[str, float] = {}
+    for name, y_true, y_prob in entries:
+        p_arr = np.asarray(y_prob, dtype=float)
+        keep = ~np.isnan(p_arr)
+        out[name] = accuracy(np.asarray(y_true, dtype=float)[keep], p_arr[keep])
+    return out
+
+
 def halt_if_suspicious(
     table: pl.DataFrame,
     ceiling: float = ACCURACY_CEILING,
     exempt: frozenset[str] = _CEILING_EXEMPT,
+    *,
+    entries: Sequence[tuple[str, np.ndarray, np.ndarray]] | None = None,
 ) -> None:
     """Raise if any model in ``table`` scored above the accuracy ceiling.
 
@@ -136,10 +150,27 @@ def halt_if_suspicious(
     failure mode it guards against is a leak that reads as a triumph — and the
     one thing that must not happen is that number being reported. The caller
     should print the table first, so the evidence is visible above the traceback.
+
+    ``entries`` is the same ``(name, y_true, y_prob)`` list handed to
+    :func:`metrics_table`. When given, the check runs on the *unrounded*
+    accuracy: ``metrics_table`` rounds to four places for display, so a genuine
+    0.72004 shows as 0.7200 and a ``pl.col("accuracy") > 0.72`` test would let it
+    through — the tripwire rounding in the leak's favour. Without ``entries`` the
+    check falls back to the rounded ``table["accuracy"]`` column, which is enough
+    for a hand-built table in a test.
     """
-    suspicious = table.filter(
-        (pl.col("accuracy") > ceiling) & ~pl.col("model").is_in(list(exempt))
-    )
+    if entries is not None:
+        exact = _exact_accuracy(entries)
+        over = [
+            name
+            for name in table["model"].to_list()
+            if name not in exempt and exact.get(name, 0.0) > ceiling
+        ]
+        suspicious = table.filter(pl.col("model").is_in(over))
+    else:
+        suspicious = table.filter(
+            (pl.col("accuracy") > ceiling) & ~pl.col("model").is_in(list(exempt))
+        )
     if not suspicious.height:
         return
 

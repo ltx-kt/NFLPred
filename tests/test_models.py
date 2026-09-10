@@ -322,3 +322,31 @@ def test_tripwire_exempts_the_market():
     """The market is allowed to be good; that is what makes it the reference."""
     table = pl.DataFrame({"model": ["market (de-vigged)"], "accuracy": [0.98]})
     halt_if_suspicious(table)
+
+
+def _entry(name: str, accuracy: float, n: int = 100_000):
+    """A synthetic (name, y, p) whose straight-up accuracy is exactly ``accuracy``."""
+    hits = round(accuracy * n)
+    y = np.ones(n)
+    p = np.array([0.9] * hits + [0.1] * (n - hits))  # >= 0.5 predicts a home win
+    return name, y, p
+
+
+def test_tripwire_catches_an_accuracy_that_rounds_down_to_the_ceiling():
+    """0.72004 displays as 0.7200; passing ``entries`` checks the unrounded value."""
+    from nflpred.evaluate import metrics_table
+
+    entries = [_entry("leaky", 0.72004)]
+    table = metrics_table(entries)
+    assert table["accuracy"][0] == ACCURACY_CEILING  # rounded display hides the leak
+
+    halt_if_suspicious(table)  # rounded column: does not trip (the old behaviour)
+    with pytest.raises(SystemExit, match="leaky"):
+        halt_if_suspicious(table, entries=entries)  # unrounded: trips
+
+
+def test_tripwire_with_entries_still_passes_a_genuinely_sub_ceiling_model():
+    from nflpred.evaluate import metrics_table
+
+    entries = [_entry("fine", 0.71996)]  # also rounds to 0.7200 for display
+    halt_if_suspicious(metrics_table(entries), entries=entries)

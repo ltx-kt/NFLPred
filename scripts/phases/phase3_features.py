@@ -187,7 +187,7 @@ def main() -> None:
 
     # ---------------------------------------------------------- the tripwire
     try:
-        halt_if_suspicious(table)
+        halt_if_suspicious(table, entries=entries)
     except SystemExit:
         print(table)
         raise

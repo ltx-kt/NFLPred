@@ -221,7 +221,7 @@ def main() -> None:
     table = _table(entries, in_sample, counts)
 
     try:
-        halt_if_suspicious(table)
+        halt_if_suspicious(table, entries=entries)
     except SystemExit:
         print(table)
         raise
@@ -308,7 +308,7 @@ def main() -> None:
 
     follow_table = _table(follow_entries, [], follow_counts)
     try:
-        halt_if_suspicious(follow_table)
+        halt_if_suspicious(follow_table, entries=follow_entries)
     except SystemExit:
         print(follow_table)
         raise

@@ -208,7 +208,7 @@ def _section(
     )
 
     try:
-        halt_if_suspicious(table)
+        halt_if_suspicious(table, entries=entries)
     except SystemExit:
         print(table)
         raise
