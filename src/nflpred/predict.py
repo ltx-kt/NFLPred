@@ -470,9 +470,7 @@ def _report(args: argparse.Namespace) -> None:
         suffixes = config_suffixes(connection)
         current = args.config or (suffixes[0] if suffixes else None)
         overall, trailing = rolling_brier(connection, window=args.window, suffix=current)
-        scored = settled_predictions(connection).filter(
-            pl.col("model_version").str.ends_with(f"-{current}")
-        )
+        scored = settled_predictions(connection, suffix=current)
     finally:
         connection.close()
 

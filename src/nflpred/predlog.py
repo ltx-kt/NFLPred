@@ -192,6 +192,11 @@ def model_version(season: int, week: int, suffix: str) -> str:
     return f"{season}w{week:02d}-{suffix}"
 
 
+def suffix_of(version: str) -> str:
+    """The config hash in a ``model_version`` — everything after the last hyphen."""
+    return version.rsplit("-", 1)[-1]
+
+
 def feature_hash(values: Sequence[float]) -> str:
     """sha256 of one game's ordered feature vector.
 
@@ -401,9 +406,17 @@ def _frame(connection: sqlite3.Connection, sql: str) -> pl.DataFrame:
     return pl.DataFrame(rows) if rows else pl.DataFrame()
 
 
-def settled_predictions(connection: sqlite3.Connection) -> pl.DataFrame:
-    """Every logged ensemble prediction that has an outcome, one row per game."""
-    return _frame(
+def settled_predictions(
+    connection: sqlite3.Connection, *, suffix: str | None = None
+) -> pl.DataFrame:
+    """Every logged ensemble prediction that has an outcome, one row per game.
+
+    ``suffix`` scopes the result to a single config hash. The filter is guarded:
+    an empty log — predictions written but nothing settled yet — comes back as a
+    zero-column frame, so filtering it on ``model_version`` here rather than at
+    the call site keeps every caller from having to re-check ``is_empty()``.
+    """
+    frame = _frame(
         connection,
         """
         SELECT p.game_id, p.model_version, p.season, p.week, p.gameday,
@@ -414,6 +427,9 @@ def settled_predictions(connection: sqlite3.Connection) -> pl.DataFrame:
         ORDER BY p.gameday, p.game_id
         """,
     )
+    if suffix is None or frame.is_empty():
+        return frame
+    return frame.filter(pl.col("model_version").str.ends_with(f"-{suffix}"))
 
 
 def settled_member_predictions(connection: sqlite3.Connection) -> pl.DataFrame:
@@ -471,7 +487,7 @@ def config_suffixes(connection: sqlite3.Connection) -> list[str]:
     for row in connection.execute(
         "SELECT model_version FROM runs ORDER BY generated_at DESC, season DESC, week DESC"
     ):
-        suffix = row["model_version"].rsplit("-", 1)[-1]
+        suffix = suffix_of(row["model_version"])
         if suffix not in seen:
             seen.append(suffix)
     return seen
