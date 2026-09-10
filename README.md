@@ -205,7 +205,7 @@ src/nflpred/
   api/            FastAPI: main.py, db.py, queries.py, analytics.py, routes/
 frontend/         Vite + React + Tailwind dashboard (5 pages, react-query)
 scripts/          phases/ (phase1-7 reports), tuning/ (tune_*), ops/ (seed_predlog.py)
-tests/            180 tests across 12 files + conftest.py
+tests/            194 tests across 14 files + conftest.py
 data/raw/         cached parquet + manifest.json (gitignored)
 data/processed/   team_game{,_gt}.parquet, game_features{,_gt}.parquet
 data/predictions.sqlite   the prediction log (gitignored)
@@ -213,8 +213,8 @@ artifacts/        fitted models/ + reliability reports/ (outputs, gitignored)
 Dockerfile        multi-stage: Node builds frontend/, Python serves both from one uvicorn
 ```
 
-Roughly 7,400 lines of typed Python in `src/`, 3,400 lines of tests, 2,900 lines
-of tuning and reporting scripts, and 1,700 lines of frontend.
+Roughly 7,500 lines of typed Python in `src/`, 3,600 lines of tests, 2,900 lines
+of tuning and reporting scripts, and 1,600 lines of frontend.
 
 ## Documentation
 
