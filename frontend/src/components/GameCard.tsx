@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import type { GameRow } from "../api/types";
-import { pct, prob3, shortDate } from "../lib/format";
+import { dateWithWeekday, matchup, pct, prob3 } from "../lib/format";
 import { ConfidenceBadge, ResultChip } from "./Badges";
 import { ProbabilityBar } from "./ProbabilityBar";
 
@@ -27,9 +27,14 @@ export function GameCard({ game }: { game: GameRow }) {
       to={`/game/${game.game_id}`}
       className="flex flex-col gap-3 card transition-colors hover:border-series-1/40"
     >
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-ink-muted">{shortDate(game.gameday)}</span>
-        <div className="flex items-center gap-2">
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-sm font-semibold text-ink">
+          {matchup(game.away_team, game.home_team)}
+          <span className="ml-1.5 font-normal text-ink-muted">
+            · {dateWithWeekday(game.gameday)}
+          </span>
+        </span>
+        <div className="flex shrink-0 items-center gap-2">
           {settled && <ResultChip pickCorrect={game.outcome!.pick_correct} />}
           <ConfidenceBadge confidence={game.confidence} />
         </div>

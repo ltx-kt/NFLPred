@@ -9,14 +9,16 @@
       content="Weekly straight-up NFL win predictions from a calibrated model ensemble, with a browsable backtest and calibration diagnostics."
     />
     <script>
-      // Resolve the theme before first paint so there is no light-mode flash.
+      // Resolve the theme and colorblind mode before first paint so there is no
+      // wrong-palette flash.
       (function () {
         try {
           var saved = localStorage.getItem("theme");
           var dark = saved ? saved === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
           if (dark) document.documentElement.classList.add("dark");
+          if (localStorage.getItem("cvd") === "on") document.documentElement.classList.add("cvd");
         } catch (e) {
-          /* private mode: fall back to light */
+          /* private mode: fall back to light, non-colorblind */
         }
       })();
     </script>

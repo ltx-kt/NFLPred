@@ -19,6 +19,14 @@ export const shortDate = (iso: string): string => {
     : d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 };
 
+// Same as shortDate but with the weekday, for a card title's date suffix.
+export const dateWithWeekday = (iso: string): string => {
+  const d = new Date(iso + (iso.length === 10 ? "T00:00:00" : ""));
+  return Number.isNaN(d.getTime())
+    ? iso
+    : d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+};
+
 // pick_correct is 1 hit / 0 miss / 0.5 tie / null. Map to a status word.
 export const resultWord = (pickCorrect: number | null): "hit" | "miss" | "push" | null => {
   if (pickCorrect == null) return null;

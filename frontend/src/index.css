@@ -27,6 +27,9 @@
   --critical: #d03b3b;
 
   --success-text: #006300;
+
+  --prob-fav: #12905a; /* green - the model's pick */
+  --prob-dog: #c2402f; /* red   - the other side */
 }
 
 .dark {
@@ -49,6 +52,21 @@
   --critical: #d03b3b;
 
   --success-text: #0ca30c;
+
+  --prob-fav: #17a868;
+  --prob-dog: #e05a45;
+}
+
+/* Colorblind mode: the game-card pick bar falls back to the blue/orange pair
+   used elsewhere in the app, instead of the green/red "pick" semantic. */
+.cvd {
+  --prob-fav: #2a78d6;
+  --prob-dog: #eb6834;
+}
+
+.dark.cvd {
+  --prob-fav: #3987e5;
+  --prob-dog: #d95926;
 }
 
 html,

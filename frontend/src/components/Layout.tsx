@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { ColorblindToggle } from "./ColorblindToggle";
 import { ThemeToggle } from "./ThemeToggle";
 
 const TABS = [
@@ -17,7 +18,10 @@ export function Layout() {
             <span className="text-sm font-semibold tracking-tight">NFL model</span>
             <span className="text-xs text-ink-muted">straight-up predictions</span>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <ColorblindToggle />
+            <ThemeToggle />
+          </div>
         </div>
         <nav className="mx-auto flex max-w-5xl gap-1 px-3">
           {TABS.map((t) => (
