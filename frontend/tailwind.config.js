@@ -18,6 +18,7 @@ export default {
         "series-3": "var(--series-3)",
         good: "var(--good)",
         critical: "var(--critical)",
+        flag: "var(--flag)",
       },
       fontFamily: {
         sans: ['system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],

@@ -1,14 +1,26 @@
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { GameRow } from "../api/types";
 import { dateWithWeekday, matchup, pct, prob3 } from "../lib/format";
-import { ConfidenceBadge, ResultChip } from "./Badges";
+import { ConfidenceBadge, ResultChip, VsMarketBadge } from "./Badges";
 import { ProbabilityBar } from "./ProbabilityBar";
 
-function Anchor({ label, value }: { label: string; value: number | null }) {
+function Anchor({
+  label,
+  value,
+  badge,
+}: {
+  label: string;
+  value: number | null;
+  badge?: ReactNode;
+}) {
   return (
     <div className="flex flex-col">
       <span className="text-[10px] uppercase tracking-wide text-ink-muted">{label}</span>
-      <span className="tnum text-xs text-ink-2">{value == null ? "-" : prob3(value)}</span>
+      <span className="flex items-center gap-1.5">
+        <span className="tnum text-xs text-ink-2">{value == null ? "-" : prob3(value)}</span>
+        {badge}
+      </span>
     </div>
   );
 }
@@ -22,10 +34,21 @@ export function GameCard({ game }: { game: GameRow }) {
         ? "text-critical"
         : "text-ink";
 
+  // A dead-even quote (5 of 1,155 logged games) has no favored side to be
+  // "against" - only flag a real disagreement.
+  const marketFavorsHome = game.market_prob == null ? null : game.market_prob > 0.5;
+  const marketFavorsAway = game.market_prob == null ? null : game.market_prob < 0.5;
+  const againstMarket =
+    (marketFavorsHome === true && game.pick !== game.home_team) ||
+    (marketFavorsAway === true && game.pick !== game.away_team);
+
   return (
     <Link
       to={`/game/${game.game_id}`}
-      className="flex flex-col gap-3 card transition-colors hover:border-series-1/40"
+      className={
+        "flex flex-col gap-3 card transition-colors hover:border-series-1/40" +
+        (againstMarket ? " border-flag/50" : "")
+      }
     >
       <div className="flex items-start justify-between gap-2">
         <span className="text-sm font-semibold text-ink">
@@ -65,7 +88,11 @@ export function GameCard({ game }: { game: GameRow }) {
 
       <div className="mt-auto grid grid-cols-2 gap-2 border-t border-hairline pt-2">
         <Anchor label="elo" value={game.elo_prob} />
-        <Anchor label="market" value={game.market_prob} />
+        <Anchor
+          label="market"
+          value={game.market_prob}
+          badge={againstMarket ? <VsMarketBadge /> : undefined}
+        />
       </div>
     </Link>
   );
