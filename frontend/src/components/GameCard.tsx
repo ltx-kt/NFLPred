@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { GameRow } from "../api/types";
 import { dateWithWeekday, matchup, pct, prob3 } from "../lib/format";
-import { ConfidenceBadge, ResultChip, VsMarketBadge } from "./Badges";
+import { AgainstMarketBadge, ConfidenceBadge, ResultChip } from "./Badges";
 import { ProbabilityBar } from "./ProbabilityBar";
 
 function Anchor({
@@ -46,8 +46,10 @@ export function GameCard({ game }: { game: GameRow }) {
     <Link
       to={`/game/${game.game_id}`}
       className={
-        "flex flex-col gap-3 card transition-colors hover:border-series-1/40" +
-        (againstMarket ? " border-flag/50" : "")
+        "flex flex-col gap-3 card transition-colors" +
+        (againstMarket
+          ? " border-2 border-flag hover:border-flag"
+          : " hover:border-series-1/40")
       }
     >
       <div className="flex items-start justify-between gap-2">
@@ -91,7 +93,7 @@ export function GameCard({ game }: { game: GameRow }) {
         <Anchor
           label="market"
           value={game.market_prob}
-          badge={againstMarket ? <VsMarketBadge /> : undefined}
+          badge={againstMarket ? <AgainstMarketBadge /> : undefined}
         />
       </div>
     </Link>

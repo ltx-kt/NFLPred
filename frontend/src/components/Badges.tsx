@@ -48,13 +48,13 @@ export function ConfidenceBadge({ confidence }: { confidence: string }) {
 // Flags a pick that differs from the market favorite. A caution flag, not a
 // trophy: historically these hit 42% vs 69% when the model agrees with the
 // market - see the tooltip.
-export function VsMarketBadge() {
+export function AgainstMarketBadge() {
   return (
     <span
       className="inline-flex rounded px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset bg-flag/10 text-flag ring-flag/25"
       title="This pick differs from the market favorite. Historically, picks against the market have hit 42% of the time, vs 69% when the model agrees with it."
     >
-      vs market
+      against market
     </span>
   );
 }
