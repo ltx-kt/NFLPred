@@ -40,11 +40,11 @@ import polars as pl
 
 from nflpred.ingest import read_pbp, read_schedules
 from nflpred.predict import (
-    TEAM_GAME_GT_PATH,
     connect,
     log_week,
     predict_week,
     summary,
+    team_game_table,
     week_frame,
 )
 
@@ -98,18 +98,12 @@ def main() -> None:
     args = parser.parse_args()
     first, last = args.seasons
 
-    if not TEAM_GAME_GT_PATH.exists():
-        parser.error(
-            f"{TEAM_GAME_GT_PATH.name} is not built. Run `uv run python -m "
-            f"nflpred.features.build` first - the seed slices the built matrix per week."
-        )
-
-    # Read the three big inputs once and thread them through every week; the
-    # default `week_frame` re-reads all three from parquet on each call.
-    print("loading team-game table, schedules, and play-by-play ...", flush=True)
-    team_game = pl.read_parquet(TEAM_GAME_GT_PATH)
+    # Load the raw inputs and build the team-game table once, then thread them
+    # through every week; the default `week_frame` redoes all three per call.
+    print("loading schedules and play-by-play, building team-game table ...", flush=True)
     schedules = read_schedules()
     pbp = read_pbp()
+    team_game = team_game_table(pbp, schedules)
 
     targets = completed_weeks(schedules, first, last)
     if args.limit is not None:

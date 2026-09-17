@@ -44,8 +44,10 @@ def index(connection: sqlite3.Connection) -> dict[str, Any]:
     rows = connection.execute(
         """
         SELECT p.season, p.week,
-               COUNT(*) AS n_games,
-               COUNT(o.game_id) AS n_settled,
+               -- DISTINCT: a week re-logged under a second config has two
+               -- rows per game, and `week()` shows each game once.
+               COUNT(DISTINCT p.game_id) AS n_games,
+               COUNT(DISTINCT o.game_id) AS n_settled,
                MAX(p.generated_at) AS generated_at
         FROM predictions p
         LEFT JOIN outcomes o USING (game_id)

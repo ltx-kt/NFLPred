@@ -17,7 +17,7 @@ from pathlib import Path
 import polars as pl
 import pytest
 
-from nflpred.config import FRONTEND_DIST, TEAM_GAME_GT_PATH
+from nflpred.config import FRONTEND_DIST, SCHEDULES_PATH
 
 pytest.importorskip("fastapi")
 
@@ -26,7 +26,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 from nflpred.api.db import log_connection  # noqa: E402
 from nflpred.api.main import app  # noqa: E402
 from nflpred.ingest import read_pbp, read_schedules  # noqa: E402
-from nflpred.predict import log_week, predict_week, week_frame  # noqa: E402
+from nflpred.predict import log_week, predict_week, team_game_table, week_frame  # noqa: E402
 from nflpred.predlog import connect, settle  # noqa: E402
 
 SETTLED_WEEK = (2023, 5)
@@ -35,13 +35,13 @@ UNSETTLED_WEEK = (2023, 6)
 
 @pytest.fixture(scope="module")
 def client(tmp_path_factory: pytest.TempPathFactory) -> Iterator[TestClient]:
-    if not TEAM_GAME_GT_PATH.exists():
-        pytest.skip("team_game_gt.parquet not built; run python -m nflpred.features.build")
+    if not SCHEDULES_PATH.exists():
+        pytest.skip("raw nflverse cache not built; run python -m nflpred.ingest")
 
     log_path = tmp_path_factory.mktemp("api") / "predictions.sqlite"
     schedules = read_schedules()
-    team_game = pl.read_parquet(TEAM_GAME_GT_PATH)
     pbp = read_pbp()
+    team_game = team_game_table(pbp, schedules)
 
     for season, week in (SETTLED_WEEK, UNSETTLED_WEEK):
         view = week_frame(season, week, team_game=team_game, schedules=schedules, pbp=pbp)

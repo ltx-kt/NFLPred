@@ -24,11 +24,11 @@ from __future__ import annotations
 import polars as pl
 import pytest
 
-from nflpred.config import LIVE_SEASON, TEAM_GAME_GT_PATH
+from nflpred.config import LIVE_SEASON, SCHEDULES_PATH
 from nflpred.features.build import build_features
 from nflpred.ingest import read_pbp, read_schedules
 from nflpred.modeling.ensemble import ENSEMBLE_FEATURES
-from nflpred.predict import _synthesized_rows, week_frame
+from nflpred.predict import _synthesized_rows, team_game_table, week_frame
 
 pytestmark = pytest.mark.data
 
@@ -47,12 +47,10 @@ LIVE_WEEK: int = 2
 
 @pytest.fixture(scope="module")
 def sources() -> tuple[pl.DataFrame, pl.DataFrame, pl.DataFrame]:
-    if not TEAM_GAME_GT_PATH.exists():
-        pytest.skip(
-            "team_game_gt.parquet not built; "
-            "run python -m nflpred.features.pbp_agg --garbage-time"
-        )
-    return pl.read_parquet(TEAM_GAME_GT_PATH), read_schedules(), read_pbp()
+    if not SCHEDULES_PATH.exists():
+        pytest.skip("raw nflverse cache not built; run python -m nflpred.ingest")
+    schedules, pbp = read_schedules(), read_pbp()
+    return team_game_table(pbp, schedules), schedules, pbp
 
 
 @pytest.fixture(scope="module")
@@ -181,7 +179,7 @@ def test_week_frame_fits_only_on_games_that_kicked_off_earlier(sources):
 
 
 def test_week_frame_builds_the_live_season(sources):
-    """The genuine live path: a season with a schedule and no results at all."""
+    """The genuine live path: the next unplayed week of the live season."""
     team_game, schedules, pbp = sources
     if not schedules.filter(pl.col("season") == LIVE_SEASON).height:
         pytest.skip(f"{LIVE_SEASON} is not in the cached schedule yet")
@@ -193,8 +191,15 @@ def test_week_frame_builds_the_live_season(sources):
     assert view.target["home_win"].null_count() == view.target.height
     for feature in ENSEMBLE_FEATURES:
         assert view.target[feature].null_count() == 0, feature
-    # Nothing from the live season could have been fitted on: there is nothing.
-    assert view.completed["season"].max() < LIVE_SEASON
+    # The live season's history is exactly its weeks that have results - the
+    # games a stale table silently dropped (D-33).
+    played = schedules.filter(
+        (pl.col("season") == LIVE_SEASON)
+        & (pl.col("week") < LIVE_WEEK)
+        & pl.col("home_score").is_not_null()
+    )["game_id"].to_list()
+    fitted = view.completed.filter(pl.col("season") == LIVE_SEASON)["game_id"].to_list()
+    assert sorted(fitted) == sorted(played)
 
 
 def test_week_frame_refuses_a_week_that_is_not_next(sources):
@@ -205,6 +210,55 @@ def test_week_frame_refuses_a_week_that_is_not_next(sources):
 
     with pytest.raises(ValueError, match="not the next unplayed week"):
         week_frame(LIVE_SEASON, 8, team_game, schedules, pbp)
+
+
+def _earlier_week(schedules: pl.DataFrame) -> list[str]:
+    """The completed week just before SKEW_WEEK, the history a stale table would lack."""
+    return schedules.filter(
+        (pl.col("season") == SKEW_SEASON) & (pl.col("week") == SKEW_WEEK - 1)
+    )["game_id"].to_list()
+
+
+def test_week_frame_refuses_a_team_game_table_missing_completed_games(sources):
+    """D-33: a table built before last week's games must not predict this week.
+
+    This is the 2026 week 2 incident in miniature - the parquet snapshot lacked
+    week 1, the schedule had its scores, and the week built without complaint
+    on history one week short.
+    """
+    team_game, schedules, pbp = sources
+    dropped = _earlier_week(schedules)
+    stale = team_game.filter(~pl.col("game_id").is_in(dropped))
+
+    with pytest.raises(ValueError, match="team-game table is missing") as raised:
+        week_frame(SKEW_SEASON, SKEW_WEEK, stale, schedules, pbp)
+    assert f"missing {len(dropped)} completed games" in str(raised.value)
+    assert sorted(dropped)[0] in str(raised.value)
+
+
+def test_week_frame_refuses_a_completed_game_without_play_by_play(sources):
+    """A final score published before its play-by-play is not usable history yet.
+
+    The table is rebuilt from the thinned play-by-play, as the default path
+    would, so the rows exist and only the plays behind them are gone.
+    """
+    _, schedules, pbp = sources
+    unpublished = _earlier_week(schedules)[:1]
+    thinned = pbp.filter(~pl.col("game_id").is_in(unpublished))
+
+    with pytest.raises(ValueError, match="no play-by-play") as raised:
+        week_frame(SKEW_SEASON, SKEW_WEEK, team_game_table(thinned, schedules), schedules, thinned)
+    assert unpublished[0] in str(raised.value)
+
+
+def test_week_frame_builds_its_own_team_game_table(sources):
+    """The default path never reads the parquet snapshot (D-33)."""
+    team_game, schedules, pbp = sources
+    built = week_frame(SKEW_SEASON, SKEW_WEEK, schedules=schedules, pbp=pbp)
+    passed = week_frame(SKEW_SEASON, SKEW_WEEK, team_game, schedules, pbp)
+
+    assert built.target.equals(passed.target)
+    assert built.completed.height == passed.completed.height
 
 
 def test_week_frame_rejects_a_week_that_does_not_exist(sources):

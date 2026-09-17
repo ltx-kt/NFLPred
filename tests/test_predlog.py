@@ -18,6 +18,7 @@ import sqlite3
 from datetime import UTC, datetime
 
 from nflpred import predict
+from nflpred.api import queries
 from nflpred.predlog import (
     connect,
     record_run,
@@ -113,6 +114,31 @@ def test_record_run_refreshes_provenance_on_a_rerun(tmp_path) -> None:
         assert (row["n_train"], row["n_calib"], row["matrix_sha256_16"]) == (
             9999, 1234, "b" * 16
         )
+    finally:
+        connection.close()
+
+
+def test_index_counts_games_once_when_a_week_is_relogged_under_a_new_config(tmp_path) -> None:
+    """A week re-run under a changed recipe has two rows per game (D-33).
+
+    The index must report the games the board shows, not the rows behind them.
+    """
+    connection = _log_with_unsettled_predictions(tmp_path / "predictions.sqlite")
+    try:
+        connection.execute(
+            "INSERT INTO predictions SELECT game_id, ?, generated_at, season, week, "
+            "gameday, home_team, away_team, feature_hash, home_win_prob, pick, "
+            "confidence, agreement, elo_prob, market_prob, record FROM predictions",
+            ("2025w08-def456",),
+        )
+        connection.execute(
+            "INSERT INTO outcomes VALUES ('2025_08_AAA_BBB', '2025-10-27', 24, 17, 1.0)"
+        )
+        connection.commit()
+
+        ref = queries.index(connection)["latest"]
+        assert (ref["n_games"], ref["n_settled"]) == (2, 1)
+        assert queries.week(connection, 2025, 8)["ref"]["n_games"] == 2
     finally:
         connection.close()
 

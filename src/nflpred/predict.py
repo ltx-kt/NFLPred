@@ -28,6 +28,18 @@ and demands the feature row come back identical. That is train/serve skew
 measured rather than argued - and it is how D-31's quarterback-form skew was
 found, since the composite failed exactly that test before it was fixed.
 
+**The team-game table is built here, not read from disk (D-33).** The parquet
+under ``data/processed/`` is a snapshot of the raw cache at the time
+``nflpred.features.pbp_agg`` last ran, and the weekly run only refreshes the raw
+cache. A snapshot from before last week's games made 2026 week 2 predict as if
+week 1 had never happened - every rolling window, every Elo rating and every
+projected starter one week stale - and nothing noticed, because the scores the
+out-of-order guard reads come from the (fresh) schedule. Building the table from
+the raw cache on every run takes well under a second and removes the snapshot
+from the live path. :func:`_missing_history` stays as the net under that: it
+refuses a week whose history lacks a completed game, whether the table was
+passed in stale or the play-by-play for a finished game is not published yet.
+
 **Documented limit.** Only a team's *next* unplayed week is buildable. Asking
 for week 12 in August would need weeks 8-11 simulated to know what form each
 team carries into it, and inventing that is a different project. It is refused
@@ -59,14 +71,15 @@ import polars as pl
 from nflpred.backtest import WeeklyFit, fit_week
 from nflpred.config import (
     CALIB_WINDOW_SEASONS,
-    FEATURE_MATRIX_GT_PATH,
     LIVE_SEASON,
+    MATRIX_START_SEASON,
     POSTSEASON_TYPES,
     RECENCY_HALF_LIFE,
-    TEAM_GAME_GT_PATH,
+    WP_BAND,
 )
 from nflpred.evaluate import market_probability
 from nflpred.features.build import build_features
+from nflpred.features.pbp_agg import build_team_game
 from nflpred.ingest import read_pbp, read_schedules
 from nflpred.modeling.base import home_win_probability
 from nflpred.modeling.ensemble import ENSEMBLE_FEATURES, meta_coefficients, predict_records
@@ -180,6 +193,55 @@ def _blocking_weeks(
     return sorted(set(pending["week"].to_list()))
 
 
+def team_game_table(pbp: pl.DataFrame, schedules: pl.DataFrame) -> pl.DataFrame:
+    """The garbage-time team-game table the live path predicts on, built now.
+
+    Callers replaying many weeks build it once and pass it to every
+    :func:`week_frame` call; a single run lets ``week_frame`` build it.
+    """
+    return build_team_game(pbp, schedules, WP_BAND)
+
+
+def _missing_history(
+    team_game: pl.DataFrame,
+    schedules: pl.DataFrame,
+    pbp: pl.DataFrame,
+    season: int,
+    kickoff: date,
+) -> tuple[list[str], list[str]]:
+    """Completed games before ``kickoff`` the week's history does not contain.
+
+    Returns ``(no_row, no_pbp)``: games with a score in the schedule but no row
+    in ``team_game``, and games with a score but no play-by-play at all. The
+    second is checked against the play-by-play rather than the table's
+    statistics because a row from ``_spine`` exists for every scored game, and
+    garbage-time aggregates are legitimately null for a side that ran no plays
+    inside the win-probability band.
+
+    Scoped to the matrix seasons: three 1999-2000 games have never had
+    play-by-play in nflverse, and no feature row reads that far back through a
+    rolling window.
+    """
+    history = schedules.filter(
+        pl.col("season").is_between(MATRIX_START_SEASON, season)
+        & pl.col("home_score").is_not_null()
+        & pl.col("away_score").is_not_null()
+        & (pl.col("gameday").str.to_date(strict=False) < kickoff)
+    ).select("game_id")
+
+    def absent(frame: pl.DataFrame) -> list[str]:
+        present = frame.select("game_id").unique()
+        return sorted(history.join(present, on="game_id", how="anti")["game_id"].to_list())
+
+    return absent(team_game), absent(pbp)
+
+
+def _preview(game_ids: Sequence[str], limit: int = 5) -> str:
+    shown = ", ".join(game_ids[:limit])
+    more = len(game_ids) - limit
+    return f"{shown} and {more} more" if more > 0 else shown
+
+
 def week_frame(
     season: int,
     week: int,
@@ -194,10 +256,14 @@ def week_frame(
     is one construction of a feature row in the project and not two. A week that
     is half played (a Thursday game done, the Sunday slate not) synthesizes only
     the games that are missing, which falls out of the same code.
+
+    ``team_game`` defaults to :func:`team_game_table` over ``pbp`` and
+    ``schedules``, never to the parquet snapshot (D-33). A table passed in is
+    checked against the schedule like any other.
     """
-    team_game = pl.read_parquet(TEAM_GAME_GT_PATH) if team_game is None else team_game
     schedules = read_schedules() if schedules is None else schedules
     pbp = read_pbp() if pbp is None else pbp
+    team_game = team_game_table(pbp, schedules) if team_game is None else team_game
 
     week_schedule = schedules.filter(
         (pl.col("season") == season) & (pl.col("week") == week)
@@ -207,6 +273,26 @@ def week_frame(
         raise ValueError(msg)
 
     kickoff = week_schedule["gameday"].str.to_date(strict=False).min()
+
+    no_row, no_pbp = _missing_history(team_game, schedules, pbp, season, kickoff)
+    if no_row:
+        msg = (
+            f"{season} week {week}: the team-game table is missing {len(no_row)} completed "
+            f"games that kicked off before it ({_preview(no_row)}). The table is older "
+            f"than the schedule; predicting would silently drop those games from every "
+            f"rolling window. Build it from the current cache with "
+            f"`nflpred.predict.team_game_table` instead of passing a stale one."
+        )
+        raise ValueError(msg)
+    if no_pbp:
+        msg = (
+            f"{season} week {week}: {len(no_pbp)} completed games before it have a score "
+            f"but no play-by-play ({_preview(no_pbp)}). nflverse usually publishes "
+            f"play-by-play within a day of the final whistle; re-run "
+            f"`uv run python -m nflpred.ingest --seasons {season} --force` once it is up."
+        )
+        raise ValueError(msg)
+
     unplayed = week_schedule.filter(
         pl.col("home_score").is_null() | pl.col("away_score").is_null()
     )
@@ -574,12 +660,6 @@ def main() -> None:
     if args.season is None or args.week is None:
         parser.error("--season and --week are required unless --settle or --report")
 
-    if not FEATURE_MATRIX_GT_PATH.exists():
-        print(
-            f"note: {FEATURE_MATRIX_GT_PATH.name} is not built. The week is rebuilt "
-            f"from the team-game table either way; build it for the checkpoints.",
-            file=sys.stderr,
-        )
     _run_week(args)
 
 
