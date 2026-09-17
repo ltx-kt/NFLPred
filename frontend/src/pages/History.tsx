@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useIndex, usePerformance } from "../api/client";
+import { useIndex, usePerformance, useSchedule } from "../api/client";
 import { KindBadge } from "../components/Badges";
-import { ErrorNote, Spinner } from "../components/Feedback";
+import { EmptyNote, ErrorNote, Spinner } from "../components/Feedback";
+import { FutureWeekBoard } from "../components/FutureWeekBoard";
 import { StatTile } from "../components/StatTile";
 import { pct, prob3, signedPct } from "../lib/format";
 import { byModel } from "../lib/metrics";
@@ -12,6 +13,7 @@ export function History() {
   const index = useIndex();
   const [params, setParams] = useSearchParams();
   const seasons = index.data?.seasons ?? [];
+  const liveSeason = index.data?.live_season;
 
   // Everything is derived from the URL, with newest-season / newest-week defaults;
   // the pickers just write ?season / ?week.
@@ -21,17 +23,30 @@ export function History() {
     return seasons.length ? seasons[seasons.length - 1].season : undefined;
   }, [params, seasons]);
 
-  const weeks = seasons.find((s) => s.season === season)?.weeks ?? [];
+  const isLive = season != null && season === liveSeason;
+  // Only the live season has games beyond what's been predicted - a backtest
+  // season is entirely in the past, so its week list is exactly what's logged.
+  const schedule = useSchedule(isLive ? season : undefined);
+
+  const predictedWeeks = seasons.find((s) => s.season === season)?.weeks ?? [];
+  const scheduleWeeks = isLive
+    ? [...new Set((schedule.data?.games ?? []).map((g) => g.week))].sort((a, b) => a - b)
+    : [];
+  // The picker can show weeks with no prediction yet; the default landing
+  // week should still be the latest one that's actually been predicted.
+  const weeks = scheduleWeeks.length ? scheduleWeeks : predictedWeeks;
   const week = useMemo(() => {
     const p = params.get("week");
     if (p && weeks.includes(+p)) return +p;
-    return weeks.length ? weeks[weeks.length - 1] : undefined;
-  }, [params, weeks]);
+    const fallback = predictedWeeks.length ? predictedWeeks : weeks;
+    return fallback.length ? fallback[fallback.length - 1] : undefined;
+  }, [params, weeks, predictedWeeks]);
 
   if (index.isLoading) return <Spinner label="Loading seasons" />;
   if (index.error) return <ErrorNote error={index.error} />;
 
   const kind = seasons.find((s) => s.season === season)?.kind ?? "backtest";
+  const isPredictedWeek = week != null && predictedWeeks.includes(week);
 
   return (
     <div>
@@ -78,9 +93,26 @@ export function History() {
         ))}
       </div>
 
-      {season != null && week != null && (
-        <WeekBoard key={`${season}-${week}`} season={season} week={week} />
-      )}
+      {season != null &&
+        week != null &&
+        (isPredictedWeek ? (
+          <WeekBoard key={`${season}-${week}`} season={season} week={week} />
+        ) : isLive ? (
+          schedule.isLoading ? (
+            <Spinner label={`Loading ${season} week ${week}`} />
+          ) : schedule.error ? (
+            <ErrorNote error={schedule.error} />
+          ) : (
+            <FutureWeekBoard
+              key={`${season}-${week}`}
+              season={season}
+              week={week}
+              games={(schedule.data?.games ?? []).filter((g) => g.week === week)}
+            />
+          )
+        ) : (
+          <EmptyNote>No predictions logged for this week.</EmptyNote>
+        ))}
     </div>
   );
 }

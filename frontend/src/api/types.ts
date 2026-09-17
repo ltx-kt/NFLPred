@@ -105,6 +105,34 @@ export interface GameDetail extends GamePrediction {
   available_versions: string[];
 }
 
+// One game of a season's full slate - played or not, predicted or not. Mirrors
+// schemas.py ScheduleGame. Distinct from GameRow: comes from the `schedule`
+// table, synced on every `--settle` independently of whether the game has
+// ever been predicted, so the prediction fields are null until it has.
+export interface ScheduleGame {
+  game_id: string;
+  season: number;
+  week: number;
+  game_type: string;
+  gameday: string | null;
+  gametime: string | null;
+  home_team: string;
+  away_team: string;
+  home_score: number | null;
+  away_score: number | null;
+  location: string | null;
+  div_game: boolean;
+  model_version: string | null;
+  pick: string | null;
+  home_win_prob: number | null;
+  confidence: string | null;
+}
+
+export interface Schedule {
+  season: number;
+  games: ScheduleGame[];
+}
+
 export interface MetricRow {
   model: string;
   n: number;

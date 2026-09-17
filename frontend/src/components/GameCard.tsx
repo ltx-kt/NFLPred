@@ -5,7 +5,7 @@ import { dateWithWeekday, matchup, pct, prob3 } from "../lib/format";
 import { AgainstMarketBadge, ConfidenceBadge, ResultChip } from "./Badges";
 import { ProbabilityBar } from "./ProbabilityBar";
 
-function Anchor({
+export function Anchor({
   label,
   value,
   badge,

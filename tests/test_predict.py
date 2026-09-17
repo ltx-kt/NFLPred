@@ -39,7 +39,10 @@ SKEW_SEASON: int = 2019
 SKEW_WEEK: int = 8
 
 #: A week of the live season. Its schedule exists; nothing else about it does.
-LIVE_WEEK: int = 1
+#: Bump this forward as the season plays out - once a week's results are
+#: ingested it is no longer "nothing else about it exists" and this test
+#: starts asserting against a week that has moved past the genuine live path.
+LIVE_WEEK: int = 2
 
 
 @pytest.fixture(scope="module")

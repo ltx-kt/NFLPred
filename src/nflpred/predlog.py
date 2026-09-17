@@ -119,10 +119,27 @@ CREATE TABLE IF NOT EXISTS outcomes (
     home_win   REAL NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS schedule (
+    game_id    TEXT PRIMARY KEY,
+    season     INTEGER NOT NULL,
+    week       INTEGER NOT NULL,
+    game_type  TEXT NOT NULL,
+    gameday    TEXT,
+    gametime   TEXT,
+    home_team  TEXT NOT NULL,
+    away_team  TEXT NOT NULL,
+    home_score INTEGER,
+    away_score INTEGER,
+    location   TEXT,
+    div_game   INTEGER
+);
+
 CREATE INDEX IF NOT EXISTS predictions_by_week
     ON predictions (season, week);
 CREATE INDEX IF NOT EXISTS member_predictions_by_member
     ON member_predictions (member);
+CREATE INDEX IF NOT EXISTS schedule_by_week
+    ON schedule (season, week);
 """
 
 
@@ -388,6 +405,71 @@ def settle(connection: sqlite3.Connection, results: pl.DataFrame) -> int:
     )
     connection.commit()
     return len(rows)
+
+
+def sync_schedule(connection: sqlite3.Connection, schedules: pl.DataFrame, *, season: int) -> int:
+    """Upsert every game of ``season``'s schedule, played or not.
+
+    Separate from ``outcomes``: that table only ever gains a row for a game
+    that was actually predicted (``settle``'s own rule), so a future or
+    unpredicted game never appears there. This table exists purely so the
+    dashboard can show a season's full slate - byes, future kickoffs, dates -
+    which the predictions table alone cannot, since only the next unplayed
+    week is ever buildable (the documented limit in ``nflpred.predict``).
+    """
+    rows = (
+        schedules.filter(pl.col("season") == season)
+        .select(
+            "game_id",
+            "season",
+            "week",
+            "game_type",
+            "gameday",
+            "gametime",
+            "home_team",
+            "away_team",
+            "home_score",
+            "away_score",
+            "location",
+            "div_game",
+        )
+        .iter_rows(named=True)
+    )
+
+    payload = [
+        (
+            row["game_id"],
+            row["season"],
+            row["week"],
+            row["game_type"],
+            row["gameday"],
+            row["gametime"],
+            row["home_team"],
+            row["away_team"],
+            None if row["home_score"] is None else int(row["home_score"]),
+            None if row["away_score"] is None else int(row["away_score"]),
+            row["location"],
+            None if row["div_game"] is None else int(row["div_game"]),
+        )
+        for row in rows
+    ]
+
+    connection.executemany(
+        """
+        INSERT INTO schedule (
+            game_id, season, week, game_type, gameday, gametime,
+            home_team, away_team, home_score, away_score, location, div_game
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+        ON CONFLICT (game_id) DO UPDATE SET
+            gameday    = excluded.gameday,
+            gametime   = excluded.gametime,
+            home_score = excluded.home_score,
+            away_score = excluded.away_score
+        """,
+        payload,
+    )
+    connection.commit()
+    return len(payload)
 
 
 # ------------------------------------------------------------- reading

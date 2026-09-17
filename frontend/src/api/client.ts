@@ -5,6 +5,7 @@ import type {
   Index,
   Members,
   Performance,
+  Schedule,
   Week,
 } from "./types";
 
@@ -51,6 +52,13 @@ export const useWeek = (season: number | undefined, week: number | undefined) =>
     queryKey: ["week", season, week],
     queryFn: () => get<Week>(`/weeks/${season}/${week}`),
     enabled: season !== undefined && week !== undefined,
+  });
+
+export const useSchedule = (season: number | undefined) =>
+  useQuery({
+    queryKey: ["schedule", season],
+    queryFn: () => get<Schedule>(`/schedule/${season}`),
+    enabled: season !== undefined,
   });
 
 export const useGame = (gameId: string | undefined, modelVersion?: string) =>

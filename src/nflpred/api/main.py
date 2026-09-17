@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from nflpred.api.routes import games, performance, weeks
+from nflpred.api.routes import games, performance, schedule, weeks
 from nflpred.config import FRONTEND_DIST
 
 #: Vite's dev server. The production build is same-origin and needs no entry here.
@@ -38,6 +38,7 @@ app.add_middleware(
 
 api = APIRouter(prefix="/api")
 api.include_router(weeks.router, tags=["weeks"])
+api.include_router(schedule.router, tags=["weeks"])
 api.include_router(games.router, tags=["games"])
 api.include_router(performance.router, tags=["diagnostics"])
 app.include_router(api)

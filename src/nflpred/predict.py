@@ -60,6 +60,7 @@ from nflpred.backtest import WeeklyFit, fit_week
 from nflpred.config import (
     CALIB_WINDOW_SEASONS,
     FEATURE_MATRIX_GT_PATH,
+    LIVE_SEASON,
     POSTSEASON_TYPES,
     RECENCY_HALF_LIFE,
     TEAM_GAME_GT_PATH,
@@ -81,6 +82,7 @@ from nflpred.predlog import (
     settle,
     settled_predictions,
     summary,
+    sync_schedule,
 )
 
 #: Columns :func:`_synthesized_rows` must fill itself. Everything else in the
@@ -452,6 +454,7 @@ def _settle(_: argparse.Namespace) -> None:
     connection = connect()
     try:
         written = settle(connection, results)
+        synced = sync_schedule(connection, schedules, season=LIVE_SEASON)
         counts = summary(connection)
     finally:
         connection.close()
@@ -461,6 +464,7 @@ def _settle(_: argparse.Namespace) -> None:
         f"  {counts['settled']} of {counts['predictions']} logged predictions now have "
         f"a result ({counts['settled_share']:.1%})"
     )
+    print(f"synced {synced} games of {LIVE_SEASON}'s schedule for the dashboard")
 
 
 def _report(args: argparse.Namespace) -> None:

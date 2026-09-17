@@ -190,6 +190,57 @@ def week(connection: sqlite3.Connection, season: int, week_no: int) -> dict[str,
     }
 
 
+def schedule(connection: sqlite3.Connection, season: int) -> dict[str, Any] | None:
+    """A season's full slate: every scheduled game, with a prediction if one exists.
+
+    The left join picks each game's most-recently-generated prediction, the
+    same "latest wins" rule `week()` applies to a re-logged week. Most games
+    join to nothing - a schedule row exists the moment the season is
+    published, long before a prediction can - which is the whole point.
+    """
+    rows = connection.execute(
+        """
+        SELECT s.*, p.model_version, p.pick, p.home_win_prob, p.confidence
+        FROM schedule s
+        LEFT JOIN predictions p
+            ON p.game_id = s.game_id
+            AND p.generated_at = (
+                SELECT MAX(generated_at) FROM predictions WHERE game_id = s.game_id
+            )
+        WHERE s.season = ?
+        ORDER BY s.week, s.gameday, s.game_id
+        """,
+        (season,),
+    ).fetchall()
+    if not rows:
+        return None
+
+    return {
+        "season": season,
+        "games": [
+            {
+                "game_id": r["game_id"],
+                "season": int(r["season"]),
+                "week": int(r["week"]),
+                "game_type": r["game_type"],
+                "gameday": r["gameday"],
+                "gametime": r["gametime"],
+                "home_team": r["home_team"],
+                "away_team": r["away_team"],
+                "home_score": r["home_score"],
+                "away_score": r["away_score"],
+                "location": r["location"],
+                "div_game": bool(r["div_game"]),
+                "model_version": r["model_version"],
+                "pick": r["pick"],
+                "home_win_prob": r["home_win_prob"],
+                "confidence": r["confidence"],
+            }
+            for r in rows
+        ],
+    }
+
+
 def game(
     connection: sqlite3.Connection, game_id: str, model_version: str | None
 ) -> dict[str, Any] | None:

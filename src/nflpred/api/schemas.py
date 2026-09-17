@@ -147,6 +147,38 @@ class Calibration(BaseModel):
     points: list[CalibrationPoint]
 
 
+class ScheduleGame(BaseModel):
+    """One game of a season's full slate - played or not, predicted or not.
+
+    Distinct from `GameRow`: this comes from the `schedule` table, which is
+    synced from the raw nflverse schedule on every `--settle`, independently of
+    whether the game has ever been predicted. `pick`/`home_win_prob`/etc. are
+    null until `nflpred.predict` actually runs that week.
+    """
+
+    game_id: str
+    season: int
+    week: int
+    game_type: str
+    gameday: str | None
+    gametime: str | None
+    home_team: str
+    away_team: str
+    home_score: int | None
+    away_score: int | None
+    location: str | None
+    div_game: bool
+    model_version: str | None
+    pick: str | None
+    home_win_prob: float | None
+    confidence: str | None
+
+
+class Schedule(BaseModel):
+    season: int
+    games: list[ScheduleGame]
+
+
 class MemberBrier(BaseModel):
     member: str
     n: int
