@@ -125,6 +125,7 @@ uv run python scripts/phases/phase6_explanations.py # attribution + hand-checked
 uv run python scripts/phases/phase7_pipeline.py     # walk-forward, the test touch, the log
 
 # A weekly run
+uv run python -m nflpred.ingest --seasons 2026 --force   # refresh this week's results first
 uv run python -m nflpred.predict --season 2026 --week 1 --explain
 uv run python -m nflpred.predict --season 2025 --week 8 --json week8.json
 uv run python -m nflpred.predict --settle    # join completed results onto the log
