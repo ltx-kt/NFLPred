@@ -388,6 +388,26 @@ def test_the_stated_top_factor_is_not_globally_ignored(explained, attributed):
             ), f"{factor['feature']} is globally ignored by every member"
 
 
+def test_the_reference_anchors_are_stated_for_the_pick(explained):
+    """The anchors are home-win probabilities; the sentence speaks for the pick.
+
+    An away pick that printed them raw read as "56% for BAL ... Elo alone 39.5%"
+    when Elo had BAL at 60.5%.
+    """
+    away_picks = 0
+    for record in explained:
+        explanation = record["explanation"]
+        if "no meaningful read" in explanation["narrative"]:
+            continue
+        pick = record["ensemble"]["pick"]
+        elo = explanation["vs_baselines"]["elo_only"]
+        if pick != record["home_team"]:
+            elo = 1.0 - elo
+            away_picks += 1
+        assert f"For reference, for {pick}: Elo alone {elo:.1%}" in explanation["narrative"]
+    assert away_picks
+
+
 def test_the_record_carries_the_spec_s_explanation_keys(explained):
     for record in explained:
         explanation = record["explanation"]

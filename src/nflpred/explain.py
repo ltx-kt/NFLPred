@@ -881,12 +881,18 @@ def narrative(
         f"{agreed} of {len(votes)} members agree (member probabilities spread {spread:.3f})."
     )
 
+    # The anchors are home-win probabilities, but the sentence above speaks for
+    # the pick, so an away pick reads them flipped.
     elo, market = baselines.get("elo_only"), baselines.get("market_implied")
+
+    def for_pick_side(anchor: float) -> float:
+        return anchor if pick == home else 1.0 - anchor
+
     anchors = [
-        f"Elo alone {elo:.1%}" if elo is not None else None,
-        f"the market {market:.1%}" if market is not None else None,
+        f"Elo alone {for_pick_side(elo):.1%}" if elo is not None else None,
+        f"the market {for_pick_side(market):.1%}" if market is not None else None,
     ]
-    parts.append("For reference: " + ", ".join(a for a in anchors if a) + ".")
+    parts.append(f"For reference, for {pick}: " + ", ".join(a for a in anchors if a) + ".")
 
     far = [
         anchor
