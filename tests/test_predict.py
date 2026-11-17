@@ -38,11 +38,20 @@ pytestmark = pytest.mark.data
 SKEW_SEASON: int = 2019
 SKEW_WEEK: int = 8
 
-#: A week of the live season. Its schedule exists; nothing else about it does.
-#: Bump this forward as the season plays out - once a week's results are
-#: ingested it is no longer "nothing else about it exists" and this test
-#: starts asserting against a week that has moved past the genuine live path.
-LIVE_WEEK: int = 2
+
+def _live_week(schedules: pl.DataFrame) -> int:
+    """The live season's earliest week without results - the genuine live path.
+
+    Derived from the cache rather than pinned, so the live-path tests track the
+    season as it plays out instead of going stale once a pinned week has scores.
+    """
+    live = schedules.filter(pl.col("season") == LIVE_SEASON)
+    if not live.height:
+        pytest.skip(f"{LIVE_SEASON} is not in the cached schedule yet")
+    unplayed = live.filter(pl.col("home_score").is_null())
+    if not unplayed.height:
+        pytest.skip(f"{LIVE_SEASON} has no unplayed weeks left")
+    return int(unplayed["week"].min())
 
 
 @pytest.fixture(scope="module")
@@ -65,9 +74,7 @@ def as_if_unplayed(sources) -> tuple[pl.DataFrame, pl.DataFrame, list[str]]:
     """
     team_game, schedules, pbp = sources
 
-    week = schedules.filter(
-        (pl.col("season") == SKEW_SEASON) & (pl.col("week") == SKEW_WEEK)
-    )
+    week = schedules.filter((pl.col("season") == SKEW_SEASON) & (pl.col("week") == SKEW_WEEK))
     game_ids = week["game_id"].to_list()
     assert game_ids, f"{SKEW_SEASON} week {SKEW_WEEK} is not in the schedule"
 
@@ -164,9 +171,9 @@ def test_week_frame_on_a_completed_week_is_a_slice_of_the_matrix(sources):
 
     assert not view.live
     assert not view.synthesized
-    assert view.target.equals(_rows(real, view.target["game_id"].to_list()).sort(
-        "gameday", "game_id"
-    ))
+    assert view.target.equals(
+        _rows(real, view.target["game_id"].to_list()).sort("gameday", "game_id")
+    )
 
 
 def test_week_frame_fits_only_on_games_that_kicked_off_earlier(sources):
@@ -181,10 +188,9 @@ def test_week_frame_fits_only_on_games_that_kicked_off_earlier(sources):
 def test_week_frame_builds_the_live_season(sources):
     """The genuine live path: the next unplayed week of the live season."""
     team_game, schedules, pbp = sources
-    if not schedules.filter(pl.col("season") == LIVE_SEASON).height:
-        pytest.skip(f"{LIVE_SEASON} is not in the cached schedule yet")
+    live_week = _live_week(schedules)
 
-    view = week_frame(LIVE_SEASON, LIVE_WEEK, team_game, schedules, pbp)
+    view = week_frame(LIVE_SEASON, live_week, team_game, schedules, pbp)
 
     assert view.live
     assert len(view.synthesized) == view.target.height
@@ -195,7 +201,7 @@ def test_week_frame_builds_the_live_season(sources):
     # games a stale table silently dropped (D-33).
     played = schedules.filter(
         (pl.col("season") == LIVE_SEASON)
-        & (pl.col("week") < LIVE_WEEK)
+        & (pl.col("week") < live_week)
         & pl.col("home_score").is_not_null()
     )["game_id"].to_list()
     fitted = view.completed.filter(pl.col("season") == LIVE_SEASON)["game_id"].to_list()
@@ -205,18 +211,21 @@ def test_week_frame_builds_the_live_season(sources):
 def test_week_frame_refuses_a_week_that_is_not_next(sources):
     """The documented limit, as a refusal rather than a silently wrong answer."""
     team_game, schedules, pbp = sources
-    if not schedules.filter(pl.col("season") == LIVE_SEASON).height:
-        pytest.skip(f"{LIVE_SEASON} is not in the cached schedule yet")
+    # Two weeks out: every team has at least one unplayed game in the way,
+    # byes included.
+    ahead = _live_week(schedules) + 2
+    if not schedules.filter((pl.col("season") == LIVE_SEASON) & (pl.col("week") == ahead)).height:
+        pytest.skip(f"{LIVE_SEASON} has no week {ahead} to refuse")
 
     with pytest.raises(ValueError, match="not the next unplayed week"):
-        week_frame(LIVE_SEASON, 8, team_game, schedules, pbp)
+        week_frame(LIVE_SEASON, ahead, team_game, schedules, pbp)
 
 
 def _earlier_week(schedules: pl.DataFrame) -> list[str]:
     """The completed week just before SKEW_WEEK, the history a stale table would lack."""
-    return schedules.filter(
-        (pl.col("season") == SKEW_SEASON) & (pl.col("week") == SKEW_WEEK - 1)
-    )["game_id"].to_list()
+    return schedules.filter((pl.col("season") == SKEW_SEASON) & (pl.col("week") == SKEW_WEEK - 1))[
+        "game_id"
+    ].to_list()
 
 
 def test_week_frame_refuses_a_team_game_table_missing_completed_games(sources):
@@ -272,9 +281,7 @@ def test_week_frame_rejects_a_week_that_does_not_exist(sources):
 
 def test_synthesized_rows_are_two_per_game_and_carry_no_statistics(sources):
     team_game, schedules, _ = sources
-    week = schedules.filter(
-        (pl.col("season") == SKEW_SEASON) & (pl.col("week") == SKEW_WEEK)
-    )
+    week = schedules.filter((pl.col("season") == SKEW_SEASON) & (pl.col("week") == SKEW_WEEK))
     rows = _synthesized_rows(week, team_game)
 
     assert rows.height == 2 * week.height
