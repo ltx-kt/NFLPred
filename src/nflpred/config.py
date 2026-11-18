@@ -306,9 +306,9 @@ POSTSEASON_TYPES: Final[frozenset[str]] = frozenset({"WC", "DIV", "CON", "SB"})
 #: historical abbreviation and is not rewritten - it agrees across both sources
 #: already, and it is only a key.
 TEAM_ALIASES: Final[dict[str, str]] = {
-    "OAK": "LV",   # Raiders -> Las Vegas, 2020
-    "SD": "LAC",   # Chargers -> Los Angeles, 2017
-    "STL": "LA",   # Rams -> Los Angeles, 2016
+    "OAK": "LV",  # Raiders -> Las Vegas, 2020
+    "SD": "LAC",  # Chargers -> Los Angeles, 2017
+    "STL": "LA",  # Rams -> Los Angeles, 2016
 }
 
 

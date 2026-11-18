@@ -144,11 +144,7 @@ def _section(
 
     started = time.perf_counter()
     weighted = _walk(matrix, seasons, half_life, "weighted")
-    control = (
-        weighted
-        if half_life is None
-        else _walk(matrix, seasons, None, "unweighted control")
-    )
+    control = weighted if half_life is None else _walk(matrix, seasons, None, "unweighted control")
     elapsed = time.perf_counter() - started
 
     target = weighted.predictions
@@ -157,9 +153,9 @@ def _section(
     # The D-26 comparability row needs feature columns, which the prediction
     # frame does not carry - so the matrix rows for the same games, in the same
     # order, checked rather than assumed.
-    features = matrix.filter(
-        pl.col("game_id").is_in(target["game_id"].to_list())
-    ).sort("gameday", "game_id")
+    features = matrix.filter(pl.col("game_id").is_in(target["game_id"].to_list())).sort(
+        "gameday", "game_id"
+    )
     assert features["game_id"].to_list() == target["game_id"].to_list()
     reference = frozen_split_reference(matrix, features, ENSEMBLE_FEATURES)
 
@@ -167,10 +163,7 @@ def _section(
         (WEIGHTED, y, weighted.probability()),
         (UNWEIGHTED, y, control.probability()),
         (FROZEN, y, reference),
-        *[
-            (f"member: {name}", y, weighted.probability(f"member_{name}"))
-            for name in MEMBER_ORDER
-        ],
+        *[(f"member: {name}", y, weighted.probability(f"member_{name}")) for name in MEMBER_ORDER],
         ("elo only (raw)", y, weighted.probability("elo_raw")),
         ("elo only (calibrated)", y, weighted.probability("elo_calibrated")),
         (
@@ -178,9 +171,7 @@ def _section(
             y,
             always_home(
                 len(y),
-                matrix.filter(pl.col("season").is_between(*TRAIN_SEASONS))[
-                    "home_win"
-                ].mean(),
+                matrix.filter(pl.col("season").is_between(*TRAIN_SEASONS))["home_win"].mean(),
             ),
         ),
         (
@@ -239,8 +230,7 @@ def _walk(
     def progress(index: int, total: int, week: dict) -> None:
         if index == 1 or index % 20 == 0 or index == total:
             print(
-                f"    {label}: week {index}/{total} "
-                f"({week['season']} w{week['week']:02d})",
+                f"    {label}: week {index}/{total} ({week['season']} w{week['week']:02d})",
                 flush=True,
             )
 
@@ -254,9 +244,7 @@ def _walk(
     )
 
 
-def _weighting_cost(
-    matrix: pl.DataFrame, result: WalkForward, half_life: float
-) -> None:
+def _weighting_cost(matrix: pl.DataFrame, result: WalkForward, half_life: float) -> None:
     """What the weighting cost in effective sample size, at the last fit."""
     last = result.weeks.row(-1, named=True)
     completed = matrix.filter(pl.col(CLOCK_COLUMN) < last["league_week"])
@@ -268,9 +256,7 @@ def _weighting_cost(
     )
 
 
-def _by_season(
-    weighted: WalkForward, control: WalkForward, reference: np.ndarray
-) -> None:
+def _by_season(weighted: WalkForward, control: WalkForward, reference: np.ndarray) -> None:
     """The same three rows, per season. A single number can hide a bad year."""
     frame = weighted.predictions.with_columns(
         unweighted=pl.Series(control.probability()),
@@ -310,9 +296,9 @@ def _by_season(
 
 def _reliability(validation: WalkForward, test: WalkForward) -> None:
     """One diagram, both spans, against Elo and the market."""
-    combined = pl.concat(
-        [validation.predictions, test.predictions], how="vertical"
-    ).sort("gameday", "game_id")
+    combined = pl.concat([validation.predictions, test.predictions], how="vertical").sort(
+        "gameday", "game_id"
+    )
     y = combined["home_win"].to_numpy()
 
     entries = [
@@ -330,10 +316,7 @@ def _reliability(validation: WalkForward, test: WalkForward) -> None:
     path = reliability_diagram(
         entries,
         report_path("phase7_walkforward_reliability.png"),
-        title=(
-            f"Phase 7 walk-forward - {VAL_SEASONS[0]}-{TEST_SEASONS[1]}, "
-            f"refit weekly"
-        ),
+        title=(f"Phase 7 walk-forward - {VAL_SEASONS[0]}-{TEST_SEASONS[1]}, refit weekly"),
     )
     report_written(path, label="3. RELIABILITY")
     print(
@@ -420,6 +403,7 @@ def _closing(
     test_frozen: np.ndarray,
 ) -> None:
     """The bars, and what the numbers say against them."""
+
     def scored(y: np.ndarray, p: np.ndarray) -> tuple[float, float]:
         table = metrics_table([("x", y, p)])
         return float(table["log_loss"][0]), float(table["accuracy"][0])
@@ -432,9 +416,7 @@ def _closing(
     print("\n" + "=" * 78)
     print("WHERE IT LANDS")
     print("=" * 78)
-    print(
-        f"  validation walk-forward     log loss {val_ll:.4f}   accuracy {val_acc:.4f}"
-    )
+    print(f"  validation walk-forward     log loss {val_ll:.4f}   accuracy {val_acc:.4f}")
     print(
         f"  validation frozen split     log loss {val_frozen_ll:.4f}   "
         f"accuracy {val_frozen_acc:.4f}   "
@@ -445,10 +427,7 @@ def _closing(
         f"  de-vigged market            log loss {MARKET_BAR['log_loss']:.4f}   "
         f"accuracy {MARKET_BAR['accuracy']:.4f}"
     )
-    print(
-        f"\n  test walk-forward           log loss {test_ll:.4f}   "
-        f"accuracy {test_acc:.4f}"
-    )
+    print(f"\n  test walk-forward           log loss {test_ll:.4f}   accuracy {test_acc:.4f}")
     print(
         f"  test frozen split           log loss {test_frozen_ll:.4f}   "
         f"accuracy {test_frozen_acc:.4f}   "

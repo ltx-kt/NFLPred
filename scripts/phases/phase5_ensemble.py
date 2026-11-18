@@ -201,9 +201,7 @@ def main() -> None:
     table = checked(
         metrics_table(entries)
         .with_columns(
-            pl.Series(
-                "group", ["ensemble"] * len(ensembles) + ["single"] * 5 + ["comparator"] * 4
-            )
+            pl.Series("group", ["ensemble"] * len(ensembles) + ["single"] * 5 + ["comparator"] * 4)
         )
         .select(["model", "group", "n", "accuracy", "log_loss", "brier"]),
         entries,
@@ -334,7 +332,8 @@ def _coefficients(stacks: dict[str, ClassifierMixin]) -> None:
         if name in row and row[name] < 0
     ]
     print(
-        "  negative weights: " + ("; ".join(negative) if negative else "none")
+        "  negative weights: "
+        + ("; ".join(negative) if negative else "none")
         + "  - a negative weight means the meta-learner reads that member as a contrarian signal."
     )
 

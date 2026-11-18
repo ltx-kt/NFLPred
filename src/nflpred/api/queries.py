@@ -250,8 +250,7 @@ def game(
     versions = [
         r["model_version"]
         for r in connection.execute(
-            "SELECT model_version FROM predictions WHERE game_id = ? "
-            "ORDER BY generated_at DESC",
+            "SELECT model_version FROM predictions WHERE game_id = ? ORDER BY generated_at DESC",
             (game_id,),
         )
     ]

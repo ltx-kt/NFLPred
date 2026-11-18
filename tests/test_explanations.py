@@ -112,6 +112,7 @@ def attributed(fitted: dict, sample: pl.DataFrame) -> dict:
 
 # ------------------------------------------------------------- additivity
 
+
 @pytest.mark.parametrize("name", [n for n in MEMBER_ORDER if n != ELO_MEMBER])
 def test_each_member_sums_to_its_own_raw_output(name, fitted, attributed):
     """`shap.sum(axis=1) + base_value == the model's own uncalibrated output`.
@@ -185,6 +186,7 @@ def test_a_flat_member_contributes_nothing_rather_than_dividing_by_zero(fitted, 
 
 # --------------------------------------------------------------- glossary
 
+
 def test_every_feature_has_a_glossary_entry():
     """The spec asks this to fail loudly, so it does.
 
@@ -234,9 +236,8 @@ def test_the_five_inverted_features_are_marked_as_such():
 def test_the_two_elo_columns_are_one_factor():
     """Ranked apart they land in the top three together in three games out of
     four, and the narrative reads "Elo edge, and also Elo edge"."""
-    assert (
-        FEATURE_GLOSSARY["elo_diff"].key("elo_diff")
-        == FEATURE_GLOSSARY["elo_prob"].key("elo_prob")
+    assert FEATURE_GLOSSARY["elo_diff"].key("elo_diff") == FEATURE_GLOSSARY["elo_prob"].key(
+        "elo_prob"
     )
 
 
@@ -267,7 +268,7 @@ def test_sign_conventions_put_a_fired_flag_on_the_right_side():
 
 
 def test_a_zero_flag_is_not_a_factor():
-    """"The away team is not starting a different quarterback" is the absence of
+    """ "The away team is not starting a different quarterback" is the absence of
     a factor, not a factor. Trees hand it a non-zero contribution anyway."""
     row = dict.fromkeys(ENSEMBLE_FEATURES, 0.0)
     contributions = np.zeros(len(ENSEMBLE_FEATURES))
@@ -288,6 +289,7 @@ def test_describe_never_emits_a_column_name(splits):
 
 
 # ------------------------------------------------- the generated paragraphs
+
 
 @pytest.fixture(scope="module")
 def explained(fitted, splits, sample) -> list[dict]:
@@ -342,11 +344,7 @@ def test_a_no_read_game_refuses_to_explain_itself(explained):
     Inside 0.03 of a coin flip the model says it has no meaningful read and
     assembles no ranked rationale, rather than manufacturing one.
     """
-    no_read = [
-        r
-        for r in explained
-        if abs(r["ensemble"]["home_win_prob"] - 0.5) < NO_READ_EDGE
-    ]
+    no_read = [r for r in explained if abs(r["ensemble"]["home_win_prob"] - 0.5) < NO_READ_EDGE]
     assert no_read, "no near-coin-flip games in the sample - the constraint is untested"
 
     for record in no_read:
@@ -358,9 +356,7 @@ def test_a_no_read_game_refuses_to_explain_itself(explained):
 
 def test_a_confident_game_does_assemble_a_rationale(explained):
     """The other half: the no-read rule must not have silenced everything."""
-    confident = [
-        r for r in explained if abs(r["ensemble"]["home_win_prob"] - 0.5) > 0.13
-    ]
+    confident = [r for r in explained if abs(r["ensemble"]["home_win_prob"] - 0.5) > 0.13]
     assert confident
     assert all(r["explanation"]["top_factors_for"] for r in confident)
 
@@ -375,17 +371,16 @@ def test_the_stated_top_factor_is_not_globally_ignored(explained, attributed):
     column layout rather than by indifference.
     """
     visible = {
-        name: np.abs(attributed["attributions"][name].values).mean(axis=0)
-        for name in MEMBER_ORDER
+        name: np.abs(attributed["attributions"][name].values).mean(axis=0) for name in MEMBER_ORDER
     }
     for record in explained:
         factors = record["explanation"]["top_factors_for"]
         factors += record["explanation"]["top_factors_against"]
         for factor in factors:
             position = ENSEMBLE_FEATURES.index(factor["feature"])
-            assert any(
-                importance[position] > 0 for importance in visible.values()
-            ), f"{factor['feature']} is globally ignored by every member"
+            assert any(importance[position] > 0 for importance in visible.values()), (
+                f"{factor['feature']} is globally ignored by every member"
+            )
 
 
 def test_the_reference_anchors_are_stated_for_the_pick(explained):
@@ -442,6 +437,7 @@ def test_per_game_reconciliation_is_reported_and_tiny(explained):
 
 
 # ------------------------------------------------------------ determinism
+
 
 def test_the_same_game_explains_identically_twice(fitted, sample):
     """Template-based and deterministic, per the spec - no LLM, and no RNG.

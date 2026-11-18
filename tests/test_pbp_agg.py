@@ -16,23 +16,39 @@ from nflpred.features.pbp_agg import build_team_game
 
 #: Games present in `load_schedules` with a final score but no play-by-play at
 #: all. Upstream gaps, all pre-2006 and therefore outside the matrix (D-2).
-GAMES_WITHOUT_PBP: frozenset[str] = frozenset({
-    "1999_01_BAL_STL",
-    "2000_03_SD_KC",
-    "2000_06_BUF_MIA",
-})
+GAMES_WITHOUT_PBP: frozenset[str] = frozenset(
+    {
+        "1999_01_BAL_STL",
+        "2000_03_SD_KC",
+        "2000_06_BUF_MIA",
+    }
+)
 
 #: Games whose play-by-play score columns disagree with the schedule's final
 #: score. The schedule is authoritative and supplies the label, so these do not
 #: affect the target - `pbp_points` is only a cross-check. Pinned so that a
 #: *new* mismatch, which would mean a broken join, still fails the suite.
-GAMES_WITH_BAD_PBP_SCORES: frozenset[str] = frozenset({
-    "2001_01_PIT_JAX", "2001_02_TEN_JAX", "2001_03_CLE_JAX", "2001_06_BUF_JAX",
-    "2001_09_CIN_JAX", "2001_11_BAL_JAX", "2001_12_GB_JAX", "2001_16_KC_JAX",
-    "2002_01_IND_JAX", "2002_04_NYJ_JAX", "2002_05_PHI_JAX", "2002_08_HOU_JAX",
-    "2002_10_WAS_JAX", "2002_13_PIT_JAX", "2002_14_CLE_JAX", "2002_16_TEN_JAX",
-    "2011_13_DET_NO",
-})
+GAMES_WITH_BAD_PBP_SCORES: frozenset[str] = frozenset(
+    {
+        "2001_01_PIT_JAX",
+        "2001_02_TEN_JAX",
+        "2001_03_CLE_JAX",
+        "2001_06_BUF_JAX",
+        "2001_09_CIN_JAX",
+        "2001_11_BAL_JAX",
+        "2001_12_GB_JAX",
+        "2001_16_KC_JAX",
+        "2002_01_IND_JAX",
+        "2002_04_NYJ_JAX",
+        "2002_05_PHI_JAX",
+        "2002_08_HOU_JAX",
+        "2002_10_WAS_JAX",
+        "2002_13_PIT_JAX",
+        "2002_14_CLE_JAX",
+        "2002_16_TEN_JAX",
+        "2011_13_DET_NO",
+    }
+)
 
 # --------------------------------------------------------------- synthetic
 
@@ -98,14 +114,16 @@ def _schedule(**overrides) -> pl.DataFrame:
 
 def test_rate_denominators_exclude_non_plays():
     """Kneels, spikes, special teams and null-EPA plays must not count."""
-    pbp = pl.DataFrame([
-        _play(play_id=1.0),                      # counts
-        _play(play_id=2.0),                      # counts
-        _play(play_id=3.0, qb_kneel=1.0),        # excluded
-        _play(play_id=4.0, qb_spike=1.0),        # excluded
-        _play(play_id=5.0, special=1.0),         # excluded
-        _play(play_id=6.0, epa=None),            # excluded
-    ])
+    pbp = pl.DataFrame(
+        [
+            _play(play_id=1.0),  # counts
+            _play(play_id=2.0),  # counts
+            _play(play_id=3.0, qb_kneel=1.0),  # excluded
+            _play(play_id=4.0, qb_spike=1.0),  # excluded
+            _play(play_id=5.0, special=1.0),  # excluded
+            _play(play_id=6.0, epa=None),  # excluded
+        ]
+    )
 
     out = build_team_game(pbp, _schedule())
     offense = out.filter(pl.col("team") == "BBB")
@@ -114,12 +132,14 @@ def test_rate_denominators_exclude_non_plays():
 
 
 def test_sack_rate_is_per_dropback_not_per_play():
-    pbp = pl.DataFrame([
-        _play(play_id=1.0, **{"pass": 1.0}, rush=0.0, qb_dropback=1.0, sack=1.0),
-        _play(play_id=2.0, **{"pass": 1.0}, rush=0.0, qb_dropback=1.0),
-        _play(play_id=3.0, rush=1.0),  # not a dropback
-        _play(play_id=4.0, rush=1.0),
-    ])
+    pbp = pl.DataFrame(
+        [
+            _play(play_id=1.0, **{"pass": 1.0}, rush=0.0, qb_dropback=1.0, sack=1.0),
+            _play(play_id=2.0, **{"pass": 1.0}, rush=0.0, qb_dropback=1.0),
+            _play(play_id=3.0, rush=1.0),  # not a dropback
+            _play(play_id=4.0, rush=1.0),
+        ]
+    )
 
     offense = build_team_game(pbp, _schedule()).filter(pl.col("team") == "BBB")
 
@@ -128,11 +148,13 @@ def test_sack_rate_is_per_dropback_not_per_play():
 
 
 def test_explosive_rate_counts_only_plays_that_ran():
-    pbp = pl.DataFrame([
-        _play(play_id=1.0, yards_gained=25.0),  # explosive
-        _play(play_id=2.0, yards_gained=3.0),
-        _play(play_id=3.0, yards_gained=0.0, **{"pass": 0.0}, rush=0.0),  # negated
-    ])
+    pbp = pl.DataFrame(
+        [
+            _play(play_id=1.0, yards_gained=25.0),  # explosive
+            _play(play_id=2.0, yards_gained=3.0),
+            _play(play_id=3.0, yards_gained=0.0, **{"pass": 0.0}, rush=0.0),  # negated
+        ]
+    )
 
     offense = build_team_game(pbp, _schedule()).filter(pl.col("team") == "BBB")
 
@@ -140,10 +162,12 @@ def test_explosive_rate_counts_only_plays_that_ran():
 
 
 def test_defense_mirrors_opponent_offense():
-    pbp = pl.DataFrame([
-        _play(play_id=1.0, posteam="BBB", defteam="AAA", epa=0.5),
-        _play(play_id=2.0, posteam="AAA", defteam="BBB", epa=-0.3),
-    ])
+    pbp = pl.DataFrame(
+        [
+            _play(play_id=1.0, posteam="BBB", defteam="AAA", epa=0.5),
+            _play(play_id=2.0, posteam="AAA", defteam="BBB", epa=-0.3),
+        ]
+    )
 
     out = build_team_game(pbp, _schedule())
     home = out.filter(pl.col("team") == "BBB")
@@ -196,8 +220,7 @@ def test_is_home_sums_to_one_per_game(team_game):
 def test_points_from_pbp_match_schedule_scores(team_game):
     """The strongest Phase 1 check: two independent paths to the same score."""
     mismatched = team_game.filter(
-        pl.col("pbp_points").is_not_null()
-        & (pl.col("pbp_points") != pl.col("points_for"))
+        pl.col("pbp_points").is_not_null() & (pl.col("pbp_points") != pl.col("points_for"))
     )
     unexpected = set(mismatched["game_id"].unique()) - GAMES_WITH_BAD_PBP_SCORES
     assert not unexpected, f"new score mismatches: {sorted(unexpected)}"
@@ -241,9 +264,7 @@ def test_no_rows_without_play_by_play(team_game):
     STL while `pbp` used LV/LAC/LA, which silently dropped ~880 games until
     `normalize_teams` reconciled the two vocabularies.
     """
-    orphaned = set(
-        team_game.filter(pl.col("off_plays").is_null())["game_id"].unique()
-    )
+    orphaned = set(team_game.filter(pl.col("off_plays").is_null())["game_id"].unique())
     unexpected = orphaned - GAMES_WITHOUT_PBP
     assert orphaned == GAMES_WITHOUT_PBP, f"unexpected orphans: {sorted(unexpected)}"
 

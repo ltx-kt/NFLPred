@@ -91,9 +91,7 @@ def test_elo_member_agrees_with_elo_probability(splits):
     _, _, val = splits
     x = val.select(ENSEMBLE_FEATURES).to_numpy().astype(float)
 
-    np.testing.assert_array_equal(
-        EloMember().predict_proba(x)[:, 1], elo_probability(val)
-    )
+    np.testing.assert_array_equal(EloMember().predict_proba(x)[:, 1], elo_probability(val))
 
 
 def test_prefit_member_slices_the_first_sixteen_columns(models, splits):
@@ -353,6 +351,5 @@ def test_record_matches_the_output_contract(members, splits):
         agreed, total = record["agreement"].split("/")
         assert int(total) == len(MEMBER_ORDER)
         assert int(agreed) == sum(
-            vote["pick"] == record["ensemble"]["pick"]
-            for vote in record["model_votes"].values()
+            vote["pick"] == record["ensemble"]["pick"] for vote in record["model_votes"].values()
         )

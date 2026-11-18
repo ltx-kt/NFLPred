@@ -84,9 +84,7 @@ def _comparator_entries(frame: pl.DataFrame) -> list[tuple[str, np.ndarray, np.n
     ]
 
 
-def performance(
-    connection: sqlite3.Connection, *, config: str | None, season: int | None
-) -> dict:
+def performance(connection: sqlite3.Connection, *, config: str | None, season: int | None) -> dict:
     """Ensemble vs Elo vs market over settled games, overall and per season-week."""
     frame, label = _scoped_frame(connection, config, season)
 

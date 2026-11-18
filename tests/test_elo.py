@@ -151,9 +151,7 @@ def test_ratings_regress_toward_the_mean_between_seasons(schedules, elo):
     """A team's first rating of a season is its last one, pulled a third in."""
     finals = season_end_ratings(schedules)
     openers = (
-        elo.sort("gameday", "game_id")
-        .group_by("team", "season")
-        .agg(pl.col("elo_pre").first())
+        elo.sort("gameday", "game_id").group_by("team", "season").agg(pl.col("elo_pre").first())
     )
 
     joined = (
@@ -161,8 +159,7 @@ def test_ratings_regress_toward_the_mean_between_seasons(schedules, elo):
             finals.with_columns(season=pl.col("season") + 1),
             on=["team", "season"],
             how="inner",
-        )
-        .filter(pl.col("season") > 2002)  # after every franchise has a history
+        ).filter(pl.col("season") > 2002)  # after every franchise has a history
     )
     assert joined.height > 500
 
@@ -186,9 +183,9 @@ def test_every_matrix_era_game_has_a_rating(elo):
 @pytest.mark.parametrize(
     ("season", "team", "position"),
     [
-        (2007, "NE", "top"),      # 16-0
+        (2007, "NE", "top"),  # 16-0
         (2008, "DET", "bottom"),  # 0-16
-        (2013, "SEA", "top"),     # Super Bowl XLVIII
+        (2013, "SEA", "top"),  # Super Bowl XLVIII
         (2017, "CLE", "bottom"),  # 0-16
     ],
 )

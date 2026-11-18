@@ -57,10 +57,9 @@ def _scrimmage_play(wp_band: tuple[float, float] | None = None) -> pl.Expr:
 
     low, high = wp_band
     win_probability = pl.coalesce("vegas_wp", "wp")
-    competitive = win_probability.is_null() | (
-        (win_probability >= low) & (win_probability <= high)
-    )
+    competitive = win_probability.is_null() | ((win_probability >= low) & (win_probability <= high))
     return _SCRIMMAGE_PLAY & competitive
+
 
 #: Plays that actually ran from scrimmage (excludes negated-by-penalty plays,
 #: which have EPA but no meaningful yardage).
@@ -103,9 +102,7 @@ _PBP_STATS: tuple[str, ...] = (
 OFFENSE_STATS: tuple[str, ...] = (*_PBP_STATS, "points")
 
 
-def _offense_by_game(
-    pbp: pl.DataFrame, wp_band: tuple[float, float] | None = None
-) -> pl.DataFrame:
+def _offense_by_game(pbp: pl.DataFrame, wp_band: tuple[float, float] | None = None) -> pl.DataFrame:
     """Aggregate each team's offensive performance within each game.
 
     Computed once. The defensive side is attached later by joining this frame
@@ -114,45 +111,50 @@ def _offense_by_game(
     """
     plays = pbp.filter(_scrimmage_play(wp_band))
 
-    return plays.group_by("game_id", "posteam").agg(
-        plays=pl.len(),
-        epa_per_play=pl.col("epa").mean(),
-        success_rate=pl.col("success").mean(),
-        # pass/rush splits
-        pass_plays=pl.col("pass").sum(),
-        pass_epa_per_play=pl.col("epa").filter(pl.col("pass") == 1).mean(),
-        pass_success_rate=pl.col("success").filter(pl.col("pass") == 1).mean(),
-        rush_plays=pl.col("rush").sum(),
-        rush_epa_per_play=pl.col("epa").filter(pl.col("rush") == 1).mean(),
-        rush_success_rate=pl.col("success").filter(pl.col("rush") == 1).mean(),
-        # yardage - only over plays that actually ran
-        yards_per_play=pl.col("yards_gained").filter(_RAN).mean(),
-        explosive_rate=(pl.col("yards_gained").filter(_RAN) >= EXPLOSIVE_YARDS).mean(),
-        # third down, using nflverse's own flags
-        third_down_att=(
-            pl.col("third_down_converted").sum() + pl.col("third_down_failed").sum()
-        ),
-        third_down_conv=pl.col("third_down_converted").sum(),
-        # pressure: sack rate is per dropback, not per play
-        dropbacks=pl.col("qb_dropback").sum(),
-        sacks=pl.col("sack").sum(),
-        # turnovers
-        interceptions=pl.col("interception").sum(),
-        fumbles_lost=pl.col("fumble_lost").sum(),
-        # QB quality. cpoe is null before 2006 and on non-pass plays; mean()
-        # skips nulls, so pre-2006 rows come out null rather than zero (D-2).
-        qb_epa_per_dropback=pl.col("qb_epa").filter(pl.col("qb_dropback") == 1).mean(),
-        cpoe=pl.col("cpoe").mean(),
-        first_downs=pl.col("first_down").sum(),
-    ).with_columns(
-        third_down_rate=pl.when(pl.col("third_down_att") > 0)
-        .then(pl.col("third_down_conv") / pl.col("third_down_att"))
-        .otherwise(None),
-        sack_rate=pl.when(pl.col("dropbacks") > 0)
-        .then(pl.col("sacks") / pl.col("dropbacks"))
-        .otherwise(None),
-        turnovers=pl.col("interceptions") + pl.col("fumbles_lost"),
-    ).rename({"posteam": "team"})
+    return (
+        plays.group_by("game_id", "posteam")
+        .agg(
+            plays=pl.len(),
+            epa_per_play=pl.col("epa").mean(),
+            success_rate=pl.col("success").mean(),
+            # pass/rush splits
+            pass_plays=pl.col("pass").sum(),
+            pass_epa_per_play=pl.col("epa").filter(pl.col("pass") == 1).mean(),
+            pass_success_rate=pl.col("success").filter(pl.col("pass") == 1).mean(),
+            rush_plays=pl.col("rush").sum(),
+            rush_epa_per_play=pl.col("epa").filter(pl.col("rush") == 1).mean(),
+            rush_success_rate=pl.col("success").filter(pl.col("rush") == 1).mean(),
+            # yardage - only over plays that actually ran
+            yards_per_play=pl.col("yards_gained").filter(_RAN).mean(),
+            explosive_rate=(pl.col("yards_gained").filter(_RAN) >= EXPLOSIVE_YARDS).mean(),
+            # third down, using nflverse's own flags
+            third_down_att=(
+                pl.col("third_down_converted").sum() + pl.col("third_down_failed").sum()
+            ),
+            third_down_conv=pl.col("third_down_converted").sum(),
+            # pressure: sack rate is per dropback, not per play
+            dropbacks=pl.col("qb_dropback").sum(),
+            sacks=pl.col("sack").sum(),
+            # turnovers
+            interceptions=pl.col("interception").sum(),
+            fumbles_lost=pl.col("fumble_lost").sum(),
+            # QB quality. cpoe is null before 2006 and on non-pass plays; mean()
+            # skips nulls, so pre-2006 rows come out null rather than zero (D-2).
+            qb_epa_per_dropback=pl.col("qb_epa").filter(pl.col("qb_dropback") == 1).mean(),
+            cpoe=pl.col("cpoe").mean(),
+            first_downs=pl.col("first_down").sum(),
+        )
+        .with_columns(
+            third_down_rate=pl.when(pl.col("third_down_att") > 0)
+            .then(pl.col("third_down_conv") / pl.col("third_down_att"))
+            .otherwise(None),
+            sack_rate=pl.when(pl.col("dropbacks") > 0)
+            .then(pl.col("sacks") / pl.col("dropbacks"))
+            .otherwise(None),
+            turnovers=pl.col("interceptions") + pl.col("fumbles_lost"),
+        )
+        .rename({"posteam": "team"})
+    )
 
 
 def _points_from_pbp(pbp: pl.DataFrame) -> pl.DataFrame:
@@ -201,28 +203,33 @@ def _spine(schedules: pl.DataFrame) -> pl.DataFrame:
             location=pl.col("location"),
         )
 
-    return pl.concat([side("home", "away"), side("away", "home")]).with_columns(
-        # `is_home` stays nominal even at neutral sites - the Super Bowl still
-        # has a designated home team for line purposes. Whether the home-field
-        # feature should be zeroed there is a Phase 3 call, so both facts are
-        # recorded and neither is baked in.
-        is_neutral_site=(pl.col("location") == "Neutral").cast(pl.Int8),
-        is_postseason=pl.col("game_type").is_in(POSTSEASON_TYPES).cast(pl.Int8),
-        margin=pl.col("points_for") - pl.col("points_against"),
-    ).with_columns(
-        # Ties are kept, not dropped (D-4). `won` is a float so a tie is 0.5;
-        # `result_class` keeps the three-way distinction legible.
-        won=pl.when(pl.col("margin") > 0)
-        .then(1.0)
-        .when(pl.col("margin") < 0)
-        .then(0.0)
-        .otherwise(0.5),
-        result_class=pl.when(pl.col("margin") > 0)
-        .then(pl.lit("win"))
-        .when(pl.col("margin") < 0)
-        .then(pl.lit("loss"))
-        .otherwise(pl.lit("tie")),
-    ).drop("location")
+    return (
+        pl.concat([side("home", "away"), side("away", "home")])
+        .with_columns(
+            # `is_home` stays nominal even at neutral sites - the Super Bowl still
+            # has a designated home team for line purposes. Whether the home-field
+            # feature should be zeroed there is a Phase 3 call, so both facts are
+            # recorded and neither is baked in.
+            is_neutral_site=(pl.col("location") == "Neutral").cast(pl.Int8),
+            is_postseason=pl.col("game_type").is_in(POSTSEASON_TYPES).cast(pl.Int8),
+            margin=pl.col("points_for") - pl.col("points_against"),
+        )
+        .with_columns(
+            # Ties are kept, not dropped (D-4). `won` is a float so a tie is 0.5;
+            # `result_class` keeps the three-way distinction legible.
+            won=pl.when(pl.col("margin") > 0)
+            .then(1.0)
+            .when(pl.col("margin") < 0)
+            .then(0.0)
+            .otherwise(0.5),
+            result_class=pl.when(pl.col("margin") > 0)
+            .then(pl.lit("win"))
+            .when(pl.col("margin") < 0)
+            .then(pl.lit("loss"))
+            .otherwise(pl.lit("tie")),
+        )
+        .drop("location")
+    )
 
 
 def build_team_game(

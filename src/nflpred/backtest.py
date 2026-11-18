@@ -213,9 +213,7 @@ def fit_week(
     calib = with_recency(calib, league_week, half_life)
 
     models = {
-        name: fit_calibrated(
-            estimator, train, calib, CORE_FEATURES, weight=WEIGHT_COLUMN
-        )
+        name: fit_calibrated(estimator, train, calib, CORE_FEATURES, weight=WEIGHT_COLUMN)
         for name, estimator in build_models(CORE_FEATURES).items()
     }
     raw = {name: inner_estimator(model) for name, model in models.items()}
@@ -349,9 +347,9 @@ def walk_forward(
     for index, bound in enumerate(boundaries.iter_rows(named=True)):
         season, week, kickoff = bound["season"], bound["week"], bound["kickoff"]
 
-        target = matrix.filter(
-            (pl.col("season") == season) & (pl.col("week") == week)
-        ).sort("gameday", "game_id")
+        target = matrix.filter((pl.col("season") == season) & (pl.col("week") == week)).sort(
+            "gameday", "game_id"
+        )
         completed = matrix.filter(pl.col("gameday") < kickoff).sort("gameday", "game_id")
 
         if fit is None or index % cadence == 0:

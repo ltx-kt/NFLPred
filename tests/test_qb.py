@@ -77,9 +77,7 @@ def test_projected_starter_is_the_previous_games_actual_starter(
 
     for row in sample.iter_rows(named=True):
         previous = (
-            ordered.filter(
-                (pl.col("team") == row["team"]) & (pl.col("gameday") < row["gameday"])
-            )
+            ordered.filter((pl.col("team") == row["team"]) & (pl.col("gameday") < row["gameday"]))
             .sort("gameday", "game_id")
             .tail(1)
         )
@@ -122,17 +120,14 @@ def test_qb_form_excludes_the_current_game(
     sample = (
         qb.filter(pl.col("season") >= MATRIX_START_SEASON)
         .join(starters.select("game_id", "team", "actual_qb"), on=["game_id", "team"])
-        .filter(
-            (pl.col("projected_qb") == pl.col("actual_qb")) & (pl.col("qb_prior_starts") >= 8)
-        )
+        .filter((pl.col("projected_qb") == pl.col("actual_qb")) & (pl.col("qb_prior_starts") >= 8))
         .sample(SAMPLE_SIZE, seed=SAMPLE_SEED)
     )
 
     for row in sample.iter_rows(named=True):
         prior = (
             player_games.filter(
-                (pl.col("actual_qb") == row["projected_qb"])
-                & (pl.col("gameday") < row["gameday"])
+                (pl.col("actual_qb") == row["projected_qb"]) & (pl.col("gameday") < row["gameday"])
             )
             .sort("gameday", "game_id")
             .tail(8)
@@ -154,9 +149,7 @@ def perturbation(
     )
 
     target = (
-        team_game.filter(
-            (pl.col("game_id") == TARGET_GAME) & (pl.col("team") == TARGET_TEAM)
-        )
+        team_game.filter((pl.col("game_id") == TARGET_GAME) & (pl.col("team") == TARGET_TEAM))
         .with_columns(pl.col("gameday").str.to_date())
         .row(0, named=True)
     )
@@ -173,9 +166,9 @@ def test_perturbing_a_qbs_game_does_not_change_that_games_own_form(perturbation)
 def test_perturbing_a_qbs_game_does_change_his_next_start(perturbation):
     """Guards the test above from passing vacuously."""
     before, after, target = perturbation
-    starter = before.filter(
-        (pl.col("game_id") == TARGET_GAME) & (pl.col("team") == TARGET_TEAM)
-    )["projected_qb"][0]
+    starter = before.filter((pl.col("game_id") == TARGET_GAME) & (pl.col("team") == TARGET_TEAM))[
+        "projected_qb"
+    ][0]
 
     later = (pl.col("projected_qb") == starter) & (pl.col("gameday") > target["gameday"])
     first_before = before.filter(later).sort("gameday", "game_id").head(1)
@@ -206,8 +199,8 @@ def test_backup_flag_fires_the_week_after_a_change_not_during_it(
     ("team", "season", "change_week"),
     [
         ("DEN", 2015, 10),  # Manning -> Osweiler
-        ("CAR", 2019, 3),   # Newton -> Allen
-        ("SF", 2022, 13),   # Garoppolo -> Purdy
+        ("CAR", 2019, 3),  # Newton -> Allen
+        ("SF", 2022, 13),  # Garoppolo -> Purdy
         ("NYJ", 2023, 12),  # Wilson -> Boyle
     ],
 )

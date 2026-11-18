@@ -72,19 +72,24 @@ def main() -> None:
     model.fit(x_train, y_train, lr__sample_weight=w_train)
 
     # ------------------------------------------------------------ inspection
-    coefficients = pl.DataFrame(
-        {
-            "feature": list(BASELINE_FEATURES),
-            "coefficient": model.named_steps["lr"].coef_[0],
-            "train_sd": model.named_steps["scale"].scale_,
-        }
-    ).with_columns(
-        pl.col("coefficient").round(4),
-        pl.col("train_sd").round(4),
-        # Coefficients are on the standardised scale, so magnitude is directly
-        # comparable across features - that is the whole reason for the scaler.
-        abs_coefficient=pl.col("coefficient").abs(),
-    ).sort("abs_coefficient", descending=True).drop("abs_coefficient")
+    coefficients = (
+        pl.DataFrame(
+            {
+                "feature": list(BASELINE_FEATURES),
+                "coefficient": model.named_steps["lr"].coef_[0],
+                "train_sd": model.named_steps["scale"].scale_,
+            }
+        )
+        .with_columns(
+            pl.col("coefficient").round(4),
+            pl.col("train_sd").round(4),
+            # Coefficients are on the standardised scale, so magnitude is directly
+            # comparable across features - that is the whole reason for the scaler.
+            abs_coefficient=pl.col("coefficient").abs(),
+        )
+        .sort("abs_coefficient", descending=True)
+        .drop("abs_coefficient")
+    )
 
     print(f"\nintercept (home-field advantage): {model.named_steps['lr'].intercept_[0]:.4f}")
     print(coefficients)

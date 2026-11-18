@@ -173,9 +173,7 @@ def team_stats_path(season: int) -> Path:
 # ------------------------------------------------------------------ ingest
 
 
-def _load_season(
-    load: Callable[[], pl.DataFrame], season: int, label: str
-) -> pl.DataFrame | None:
+def _load_season(load: Callable[[], pl.DataFrame], season: int, label: str) -> pl.DataFrame | None:
     """Pull one season, returning ``None`` when the live one is not published.
 
     Before week 1 the live season has a schedule and nothing else - nflverse
@@ -215,9 +213,7 @@ def ingest_pbp(seasons: Iterable[int], *, force: bool = False) -> None:
 
         started = time.perf_counter()
         frame = _load_season(
-            lambda year=season: _select(
-                nfl.load_pbp([year]), PBP_COLUMNS, f"load_pbp({year})"
-            ),
+            lambda year=season: _select(nfl.load_pbp([year]), PBP_COLUMNS, f"load_pbp({year})"),
             season,
             "pbp",
         )
@@ -345,9 +341,7 @@ def normalize_teams(frame: pl.DataFrame, columns: Sequence[str]) -> pl.DataFrame
     )
 
 
-def _cached_paths(
-    seasons: Iterable[int], to_path: Callable[[int], Path], label: str
-) -> list[Path]:
+def _cached_paths(seasons: Iterable[int], to_path: Callable[[int], Path], label: str) -> list[Path]:
     """Cache files for ``seasons``, tolerating an absent **live** season.
 
     A missing completed season is a broken cache and raises. A missing live

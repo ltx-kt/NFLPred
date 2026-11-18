@@ -114,9 +114,7 @@ def test_every_scheduled_game_is_predicted_exactly_once(matrix, season_walk):
     played = matrix.filter(pl.col("season") == SAMPLE_SEASON)
 
     assert season_walk.predictions.height == played.height
-    assert (
-        season_walk.predictions["game_id"].n_unique() == season_walk.predictions.height
-    )
+    assert season_walk.predictions["game_id"].n_unique() == season_walk.predictions.height
     assert set(season_walk.predictions["game_id"]) == set(played["game_id"])
 
 
@@ -133,10 +131,7 @@ def _poison(matrix: pl.DataFrame, league_week: int) -> pl.DataFrame:
     """Rewrite every feature and result at or after ``league_week`` to garbage."""
     at_or_after = pl.col("league_week") >= league_week
     return matrix.with_columns(
-        [
-            pl.when(at_or_after).then(999.0).otherwise(pl.col(c)).alias(c)
-            for c in CORE_FEATURES
-        ]
+        [pl.when(at_or_after).then(999.0).otherwise(pl.col(c)).alias(c) for c in CORE_FEATURES]
         + [
             pl.when(at_or_after).then(999.0).otherwise(pl.col("elo_prob")).alias("elo_prob"),
             pl.when(at_or_after).then(1.0).otherwise(pl.col("home_win")).alias("home_win"),
@@ -158,9 +153,7 @@ def _predict_target(source: pl.DataFrame, clean_target: pl.DataFrame, bound: dic
     after poisoning test: poisoning the rows a model is *asked about* would move
     its answers for the obvious reason and tell us nothing about its fit.
     """
-    completed = source.filter(pl.col("gameday") < bound["kickoff"]).sort(
-        "gameday", "game_id"
-    )
+    completed = source.filter(pl.col("gameday") < bound["kickoff"]).sort("gameday", "game_id")
     fit = fit_week(
         completed,
         int(bound["league_week"]),
@@ -214,10 +207,7 @@ def test_poisoning_before_the_target_week_does_change_things(matrix, poison_targ
 
     before = pl.col("league_week").is_between(league_week - 20, league_week - 1)
     earlier = matrix.with_columns(
-        [
-            pl.when(before).then(999.0).otherwise(pl.col(c)).alias(c)
-            for c in CORE_FEATURES
-        ]
+        [pl.when(before).then(999.0).otherwise(pl.col(c)).alias(c) for c in CORE_FEATURES]
     )
 
     assert not np.allclose(

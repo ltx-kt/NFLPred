@@ -54,9 +54,7 @@ def _series(values: list[float], team: str = "AAA", start_season: int = 2023) ->
 
 
 def _rolled(frame: pl.DataFrame) -> pl.DataFrame:
-    return build_rolling(
-        frame, windows=WINDOWS, stats=STATS, std_stats=STD_STATS
-    ).sort("gameday")
+    return build_rolling(frame, windows=WINDOWS, stats=STATS, std_stats=STD_STATS).sort("gameday")
 
 
 def test_rolling_value_is_the_mean_of_the_prior_window():
@@ -64,11 +62,11 @@ def test_rolling_value_is_the_mean_of_the_prior_window():
     out = _rolled(_series([1.0, 2.0, 3.0, 4.0, 5.0]))
 
     assert out["off_epa_r3"].to_list() == [
-        None,                 # no history
-        1.0,                  # mean(1)
-        pytest.approx(1.5),   # mean(1, 2)
-        2.0,                  # mean(1, 2, 3)
-        3.0,                  # mean(2, 3, 4) - the 1.0 has fallen out
+        None,  # no history
+        1.0,  # mean(1)
+        pytest.approx(1.5),  # mean(1, 2)
+        2.0,  # mean(1, 2, 3)
+        3.0,  # mean(2, 3, 4) - the 1.0 has fallen out
     ]
 
 
@@ -115,8 +113,7 @@ def test_games_in_window_counts_prior_games_only():
 
 def test_teams_do_not_bleed_into_each_other():
     """One team's history must never appear in another team's window."""
-    frame = pl.concat([_series([1.0, 1.0, 1.0], team="AAA"),
-                       _series([9.0, 9.0, 9.0], team="BBB")])
+    frame = pl.concat([_series([1.0, 1.0, 1.0], team="AAA"), _series([9.0, 9.0, 9.0], team="BBB")])
     out = build_rolling(frame, windows=WINDOWS, stats=STATS, std_stats=STD_STATS)
 
     bbb = out.filter(pl.col("team") == "BBB").sort("gameday")
@@ -137,9 +134,7 @@ def test_ordering_is_by_date_not_week():
         off_epa_per_play=pl.lit(5.0),
         def_epa_per_play=pl.lit(-5.0),
     )
-    out = build_rolling(
-        pl.concat([frame, late]), windows=WINDOWS, stats=STATS, std_stats=STD_STATS
-    )
+    out = build_rolling(pl.concat([frame, late]), windows=WINDOWS, stats=STATS, std_stats=STD_STATS)
 
     playoff = out.filter(pl.col("game_id") == "2023_01_AAA_LATE")
     # Sees both regular-season games; contributes to neither.
@@ -149,9 +144,7 @@ def test_ordering_is_by_date_not_week():
 
 def test_emits_a_column_per_stat_side_and_window():
     frame = _series([1.0, 2.0, 3.0])
-    out = build_rolling(
-        frame, windows=ROLLING_WINDOWS, stats=STATS, std_stats=STD_STATS
-    )
+    out = build_rolling(frame, windows=ROLLING_WINDOWS, stats=STATS, std_stats=STD_STATS)
 
     expected = set(rolled_columns(ROLLING_WINDOWS, STATS))
     assert expected == {"off_epa_r4", "off_epa_r8", "def_epa_r4", "def_epa_r8"}
@@ -171,10 +164,10 @@ def test_season_to_date_is_the_expanding_mean_of_prior_games_this_season():
     # Week 1 falls back to the cross-season window, which is null with no
     # history at all; weeks 2+ expand rather than sliding.
     assert out["off_epa_std"].to_list() == [
-        None,                 # week 1: nothing this season and nothing before
-        1.0,                  # mean(1)
-        pytest.approx(1.5),   # mean(1, 2)
-        2.0,                  # mean(1, 2, 3) - the 1.0 has *not* fallen out
+        None,  # week 1: nothing this season and nothing before
+        1.0,  # mean(1)
+        pytest.approx(1.5),  # mean(1, 2)
+        2.0,  # mean(1, 2, 3) - the 1.0 has *not* fallen out
     ]
 
 

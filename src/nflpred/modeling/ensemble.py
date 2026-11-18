@@ -202,9 +202,7 @@ class EloMember(ClassifierMixin, BaseEstimator):
     ensemble's Elo member and the checkpoint's Elo row are the same object.
     """
 
-    def __init__(
-        self, platt: LogisticRegression | None = None, column: int | None = None
-    ) -> None:
+    def __init__(self, platt: LogisticRegression | None = None, column: int | None = None) -> None:
         self.platt = platt
         self.column = column
 
@@ -387,9 +385,7 @@ class TimeSeriesStack(ClassifierMixin, BaseEstimator):
         return (self.predict_proba(X)[:, 1] >= 0.5).astype(float)
 
 
-def oof_stack(
-    features: Sequence[str] = CORE_FEATURES, n_splits: int = 5
-) -> TimeSeriesStack:
+def oof_stack(features: Sequence[str] = CORE_FEATURES, n_splits: int = 5) -> TimeSeriesStack:
     """An **unfitted** spec-literal stack, for :func:`fit_calibrated` to fit.
 
     ``features`` selects the members' frozen hyperparameters (D-16), not their

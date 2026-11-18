@@ -240,9 +240,7 @@ def main() -> None:
     # 1. Feature-count control: does the best booster want 104 columns?
     #    Its hyperparameters were never gridded at that width (nothing was), so
     #    this row is a control with a handicap, and is read as one.
-    wide_model = fit_calibrated(
-        build_models(wide)[booster_label], train, calib, wide
-    )
+    wide_model = fit_calibrated(build_models(wide)[booster_label], train, calib, wide)
     follow_entries.append(
         (f"{booster_label}, wide", y_val, home_win_probability(wide_model, val, wide))
     )
@@ -252,9 +250,7 @@ def main() -> None:
     #    matrix. Everything else is held constant, so the difference is the
     #    win-probability filter and nothing else.
     unfiltered_features = FEATURE_SETS[booster_set][1]
-    train_u, calib_u, val_u = (
-        split_frame(matrix_unfiltered, s) for s in ("train", "calib", "val")
-    )
+    train_u, calib_u, val_u = (split_frame(matrix_unfiltered, s) for s in ("train", "calib", "val"))
     unfiltered_model = fit_calibrated(
         build_models(unfiltered_features)[booster_label], train_u, calib_u, unfiltered_features
     )

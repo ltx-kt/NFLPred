@@ -12,9 +12,7 @@ router = APIRouter()
 
 
 @router.get("/games/{game_id}", response_model=GameDetail)
-def game_detail(
-    game_id: str, connection: Connection, model_version: str | None = None
-) -> dict:
+def game_detail(game_id: str, connection: Connection, model_version: str | None = None) -> dict:
     """A single game. Newest config by default; ``?model_version=`` pins a run.
 
     ``record`` is passed through exactly as `nflpred.modeling.ensemble` wrote it, with

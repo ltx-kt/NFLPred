@@ -130,12 +130,7 @@ def lagged(column: str, window: int, partition: str = "team") -> pl.Expr:
     window rather than voiding it. The first game of a series is null either
     way - there is nothing prior to average.
     """
-    return (
-        pl.col(column)
-        .rolling_mean(window_size=window, min_samples=1)
-        .shift(1)
-        .over(partition)
-    )
+    return pl.col(column).rolling_mean(window_size=window, min_samples=1).shift(1).over(partition)
 
 
 def through(column: str, window: int, partition: str = "team") -> pl.Expr:
@@ -178,13 +173,7 @@ def _expanding(column: str) -> pl.Expr:
     total = value.fill_null(0.0).cum_sum().over(group)
     observed = value.is_not_null().cum_sum().over(group)
 
-    return (
-        pl.when(observed > 0)
-        .then(total / observed)
-        .otherwise(None)
-        .shift(1)
-        .over(group)
-    )
+    return pl.when(observed > 0).then(total / observed).otherwise(None).shift(1).over(group)
 
 
 def _as_date(frame: pl.DataFrame, column: str = "gameday") -> pl.DataFrame:
@@ -246,9 +235,7 @@ def build_rolling(
     fallback = max(windows)
 
     return (
-        ordered.with_columns(
-            [*lags, *season_to_date, *counts, in_season.alias("games_in_season")]
-        )
+        ordered.with_columns([*lags, *season_to_date, *counts, in_season.alias("games_in_season")])
         .with_columns(
             std_is_fallback=(pl.col("games_in_season") == 0).cast(pl.Int8),
             **{

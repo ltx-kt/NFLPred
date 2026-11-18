@@ -49,19 +49,18 @@ def _score(schedules: pl.DataFrame, k: float, hfa: float, mov: bool) -> dict[str
     elo = build_elo(schedules, k=k, hfa=hfa, mov=mov)
 
     # Home rows only: one prediction per game, not two mirrored ones.
-    train = elo.filter(
-        (pl.col("is_home") == 1)
-        & pl.col("season").is_between(*TRAIN_SEASONS)
-    ).join(
-        schedules.select("game_id", "home_score", "away_score"),
-        on="game_id",
-        how="inner",
-    ).filter(pl.col("home_score").is_not_null())
+    train = (
+        elo.filter((pl.col("is_home") == 1) & pl.col("season").is_between(*TRAIN_SEASONS))
+        .join(
+            schedules.select("game_id", "home_score", "away_score"),
+            on="game_id",
+            how="inner",
+        )
+        .filter(pl.col("home_score").is_not_null())
+    )
 
     margin = train["home_score"] - train["away_score"]
-    outcome = (
-        pl.when(margin > 0).then(1.0).when(margin < 0).then(0.0).otherwise(0.5)
-    )
+    outcome = pl.when(margin > 0).then(1.0).when(margin < 0).then(0.0).otherwise(0.5)
     y = train.select(outcome.alias("y"))["y"].to_numpy()
     p = train["elo_prob"].to_numpy()
 
@@ -79,18 +78,17 @@ def _score(schedules: pl.DataFrame, k: float, hfa: float, mov: bool) -> dict[str
 def main() -> None:
     schedules = read_schedules()
 
-    rows = [
-        _score(schedules, k, hfa, mov)
-        for mov in MOV_GRID
-        for k in K_GRID
-        for hfa in HFA_GRID
-    ]
+    rows = [_score(schedules, k, hfa, mov) for mov in MOV_GRID for k in K_GRID for hfa in HFA_GRID]
 
-    grid = pl.DataFrame(rows).with_columns(
-        pl.col("log_loss").round(4),
-        pl.col("brier").round(4),
-        pl.col("accuracy").round(4),
-    ).sort("log_loss")
+    grid = (
+        pl.DataFrame(rows)
+        .with_columns(
+            pl.col("log_loss").round(4),
+            pl.col("brier").round(4),
+            pl.col("accuracy").round(4),
+        )
+        .sort("log_loss")
+    )
 
     print(
         f"Elo grid - scored on {TRAIN_SEASONS[0]}-{TRAIN_SEASONS[1]} only "

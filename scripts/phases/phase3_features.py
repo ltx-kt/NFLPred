@@ -102,9 +102,7 @@ def _coefficients(model: Pipeline, features: Sequence[str]) -> pl.DataFrame:
                 "coefficient": model.named_steps["lr"].coef_[0],
             }
         )
-        .with_columns(
-            pl.col("coefficient").round(4), magnitude=pl.col("coefficient").abs()
-        )
+        .with_columns(pl.col("coefficient").round(4), magnitude=pl.col("coefficient").abs())
         .sort("magnitude", descending=True)
         .drop("magnitude")
     )
@@ -170,9 +168,7 @@ def main() -> None:
         (
             "market (de-vigged)",
             y_val,
-            market_probability(
-                val["home_moneyline"].to_numpy(), val["away_moneyline"].to_numpy()
-            ),
+            market_probability(val["home_moneyline"].to_numpy(), val["away_moneyline"].to_numpy()),
         )
     )
 
@@ -182,9 +178,7 @@ def main() -> None:
     print(f"\nvalidation {VAL_SEASONS[0]}-{VAL_SEASONS[1]}   [n features in brackets]")
     print(
         table.join(
-            metrics_table(in_sample).select(
-                "model", train_log_loss=pl.col("log_loss")
-            ),
+            metrics_table(in_sample).select("model", train_log_loss=pl.col("log_loss")),
             on="model",
             how="left",
         )

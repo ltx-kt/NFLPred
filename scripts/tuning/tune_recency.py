@@ -137,11 +137,15 @@ def main() -> None:
             f"({row['seconds']}s)"
         )
 
-    grid = pl.DataFrame(rows).with_columns(
-        pl.col("log_loss").round(4),
-        pl.col("brier").round(4),
-        pl.col("accuracy").round(4),
-    ).sort("log_loss")
+    grid = (
+        pl.DataFrame(rows)
+        .with_columns(
+            pl.col("log_loss").round(4),
+            pl.col("brier").round(4),
+            pl.col("accuracy").round(4),
+        )
+        .sort("log_loss")
+    )
 
     print(f"\n{grid}")
 

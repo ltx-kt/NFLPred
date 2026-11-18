@@ -42,8 +42,24 @@ def _log_with_unsettled_predictions(path) -> sqlite3.Connection:
             half_life, features, matrix_sha256_16, versions, meta_coefficients
         ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """,
-        (VERSION, now, 2025, 8, 500, 2006, 2015, 2670, 2016, 2018, 801,
-         60.0, json.dumps(["elo_prob"]), "0" * 16, json.dumps({"python": "3.13"}), None),
+        (
+            VERSION,
+            now,
+            2025,
+            8,
+            500,
+            2006,
+            2015,
+            2670,
+            2016,
+            2018,
+            801,
+            60.0,
+            json.dumps(["elo_prob"]),
+            "0" * 16,
+            json.dumps({"python": "3.13"}),
+            None,
+        ),
     )
     for i, game_id in enumerate(("2025_08_AAA_BBB", "2025_08_CCC_DDD")):
         connection.execute(
@@ -54,9 +70,24 @@ def _log_with_unsettled_predictions(path) -> sqlite3.Connection:
                 confidence, agreement, elo_prob, market_prob, record
             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
-            (game_id, VERSION, now, 2025, 8, "2025-10-26",
-             game_id[-3:], game_id[8:11], "f" * 16, 0.6 + 0.01 * i, game_id[-3:],
-             "moderate", "5/6", 0.58, 0.55, json.dumps({"game_id": game_id})),
+            (
+                game_id,
+                VERSION,
+                now,
+                2025,
+                8,
+                "2025-10-26",
+                game_id[-3:],
+                game_id[8:11],
+                "f" * 16,
+                0.6 + 0.01 * i,
+                game_id[-3:],
+                "moderate",
+                "5/6",
+                0.58,
+                0.55,
+                json.dumps({"game_id": game_id}),
+            ),
         )
     connection.commit()
     return connection
@@ -98,22 +129,28 @@ def test_record_run_refreshes_provenance_on_a_rerun(tmp_path) -> None:
     """
     connection = connect(tmp_path / "predictions.sqlite")
     common = dict(
-        season=2025, week=8, league_week=500, train_seasons=(2006, 2015),
-        calib_seasons=(2016, 2018), half_life=60.0, features=["elo_prob"],
-        versions={"python": "3.13"}, meta_coefficients=None,
+        season=2025,
+        week=8,
+        league_week=500,
+        train_seasons=(2006, 2015),
+        calib_seasons=(2016, 2018),
+        half_life=60.0,
+        features=["elo_prob"],
+        versions={"python": "3.13"},
+        meta_coefficients=None,
     )
     try:
-        record_run(connection, VERSION, n_train=2670, n_calib=801,
-                   matrix_sha256_16="a" * 16, **common)
-        record_run(connection, VERSION, n_train=9999, n_calib=1234,
-                   matrix_sha256_16="b" * 16, **common)
+        record_run(
+            connection, VERSION, n_train=2670, n_calib=801, matrix_sha256_16="a" * 16, **common
+        )
+        record_run(
+            connection, VERSION, n_train=9999, n_calib=1234, matrix_sha256_16="b" * 16, **common
+        )
         row = connection.execute(
             "SELECT n_train, n_calib, matrix_sha256_16 FROM runs WHERE model_version = ?",
             (VERSION,),
         ).fetchone()
-        assert (row["n_train"], row["n_calib"], row["matrix_sha256_16"]) == (
-            9999, 1234, "b" * 16
-        )
+        assert (row["n_train"], row["n_calib"], row["matrix_sha256_16"]) == (9999, 1234, "b" * 16)
     finally:
         connection.close()
 

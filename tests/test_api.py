@@ -51,9 +51,7 @@ def client(tmp_path_factory: pytest.TempPathFactory) -> Iterator[TestClient]:
     # Settle only the first week, so the API has both a scored and an unscored week.
     season, week = SETTLED_WEEK
     finished = schedules.filter(
-        (pl.col("season") == season)
-        & (pl.col("week") == week)
-        & pl.col("home_score").is_not_null()
+        (pl.col("season") == season) & (pl.col("week") == week) & pl.col("home_score").is_not_null()
     ).select(
         "game_id",
         "home_score",

@@ -45,6 +45,7 @@ HALF_LIFE: float = 20.0
 
 pytestmark = pytest.mark.data
 
+
 def _clock(values: list[int]) -> pl.DataFrame:
     return pl.DataFrame({CLOCK_COLUMN: pl.Series(values, dtype=pl.Int32)})
 
@@ -103,9 +104,7 @@ def test_unweighted_half_life_reproduces_the_unweighted_fit_exactly(splits):
     """``half_life=None`` must be the *same* fit, not merely a similar one."""
     train, calib, val = splits
 
-    plain = fit_calibrated(
-        build_models(CORE_FEATURES)["logreg"], train, calib, CORE_FEATURES
-    )
+    plain = fit_calibrated(build_models(CORE_FEATURES)["logreg"], train, calib, CORE_FEATURES)
     flat = fit_calibrated(
         build_models(CORE_FEATURES)["logreg"],
         with_recency(train, 400, None),

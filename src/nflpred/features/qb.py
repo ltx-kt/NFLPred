@@ -119,9 +119,7 @@ def _modal_starter(window: int = MODAL_STARTER_WINDOW) -> pl.Expr:
     """
     lags = [pl.col("actual_qb").shift(i).over("team") for i in range(1, window + 1)]
     return (
-        pl.concat_list(lags)
-        .list.eval(pl.element().drop_nulls().mode().sort().first())
-        .list.first()
+        pl.concat_list(lags).list.eval(pl.element().drop_nulls().mode().sort().first()).list.first()
     )
 
 
@@ -201,9 +199,7 @@ def build_qb(
     # instead. Suppressed narrowly, by message, so a genuinely unsorted frame
     # elsewhere would still be reported.
     with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore", message="Sortedness of columns cannot be checked"
-        )
+        warnings.filterwarnings("ignore", message="Sortedness of columns cannot be checked")
         form = starters.sort("gameday").join_asof(
             player_series,
             on="gameday",
@@ -213,31 +209,35 @@ def build_qb(
 
     unknown = pl.col(f"qb_epa_r{max(windows)}").is_null()
 
-    return form.with_columns(
-        qb_form_unknown=unknown.cast(pl.Int8),
-        backup_qb_starting=(
-            pl.col("projected_qb").is_not_null()
-            & pl.col("modal_qb").is_not_null()
-            & (pl.col("projected_qb") != pl.col("modal_qb"))
-        ).cast(pl.Int8),
-        qb_prior_starts=pl.col("qb_prior_starts").fill_null(0),
-        **{
-            f"{name}_r{w}": pl.col(f"{name}_r{w}").fill_null(NEUTRAL)
-            for name in ("qb_epa", "qb_cpoe")
-            for w in windows
-        },
-    ).select(
-        "game_id",
-        "season",
-        "week",
-        "gameday",
-        "team",
-        "projected_qb",
-        "qb_prior_starts",
-        *[f"{name}_r{w}" for name in ("qb_epa", "qb_cpoe") for w in windows],
-        "backup_qb_starting",
-        "qb_form_unknown",
-    ).sort("gameday", "game_id", "team")
+    return (
+        form.with_columns(
+            qb_form_unknown=unknown.cast(pl.Int8),
+            backup_qb_starting=(
+                pl.col("projected_qb").is_not_null()
+                & pl.col("modal_qb").is_not_null()
+                & (pl.col("projected_qb") != pl.col("modal_qb"))
+            ).cast(pl.Int8),
+            qb_prior_starts=pl.col("qb_prior_starts").fill_null(0),
+            **{
+                f"{name}_r{w}": pl.col(f"{name}_r{w}").fill_null(NEUTRAL)
+                for name in ("qb_epa", "qb_cpoe")
+                for w in windows
+            },
+        )
+        .select(
+            "game_id",
+            "season",
+            "week",
+            "gameday",
+            "team",
+            "projected_qb",
+            "qb_prior_starts",
+            *[f"{name}_r{w}" for name in ("qb_epa", "qb_cpoe") for w in windows],
+            "backup_qb_starting",
+            "qb_form_unknown",
+        )
+        .sort("gameday", "game_id", "team")
+    )
 
 
 def main() -> None:

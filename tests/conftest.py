@@ -21,9 +21,7 @@ from nflpred.features.build import CORE_FEATURES
 from nflpred.modeling.base import fit_all, split_frame
 
 
-def pytest_collection_modifyitems(
-    config: pytest.Config, items: list[pytest.Item]
-) -> None:
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
     """Auto-skip every `data`-marked test when the feature matrix is not built.
 
     Individual data fixtures still `pytest.skip` with the exact build command;

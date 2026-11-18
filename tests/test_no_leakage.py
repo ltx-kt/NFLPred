@@ -114,9 +114,7 @@ def perturbation(team_game: pl.DataFrame) -> tuple[pl.DataFrame, pl.DataFrame, d
         .row(8, named=True)
     )
 
-    absurd = pl.when(
-        (pl.col("game_id") == target["game_id"]) & (pl.col("team") == target["team"])
-    )
+    absurd = pl.when((pl.col("game_id") == target["game_id"]) & (pl.col("team") == target["team"]))
     perturbed = team_game.with_columns(
         off_epa_per_play=absurd.then(pl.lit(99.0)).otherwise(pl.col("off_epa_per_play")),
         off_success_rate=absurd.then(pl.lit(1.0)).otherwise(pl.col("off_success_rate")),
@@ -189,9 +187,7 @@ def full_perturbation(sources) -> tuple[pl.DataFrame, pl.DataFrame, dict]:
 
     in_team_game = pl.col("game_id") == FULL_TARGET_GAME
     absurd_team_game = team_game.with_columns(
-        off_epa_per_play=pl.when(in_team_game)
-        .then(99.0)
-        .otherwise(pl.col("off_epa_per_play")),
+        off_epa_per_play=pl.when(in_team_game).then(99.0).otherwise(pl.col("off_epa_per_play")),
         off_success_rate=pl.when(in_team_game).then(1.0).otherwise(pl.col("off_success_rate")),
         off_points=pl.when(in_team_game).then(99).otherwise(pl.col("off_points")),
         off_turnovers=pl.when(in_team_game).then(9).otherwise(pl.col("off_turnovers")),

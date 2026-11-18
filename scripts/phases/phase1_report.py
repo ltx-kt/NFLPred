@@ -76,9 +76,7 @@ def main() -> None:
 
     # ------------------------------------------------------ excluded games
     header("4. GAMES IN SCHEDULES BUT NOT IN THE TABLE")
-    no_result = schedules.filter(
-        pl.col("home_score").is_null() | pl.col("away_score").is_null()
-    )
+    no_result = schedules.filter(pl.col("home_score").is_null() | pl.col("away_score").is_null())
     print(f"  {no_result.height} scheduled games have no final score")
     print(no_result.group_by("season").len().sort("season"))
     cancelled = no_result.filter(pl.col("season") <= 2025)
@@ -117,10 +115,11 @@ def main() -> None:
     scored = team_game.filter(pl.col("pbp_points").is_not_null())
     mismatch = scored.filter(pl.col("pbp_points") != pl.col("points_for"))
     print(f"  rows compared   {scored.height:,}")
-    print(f"  agreeing        {scored.height - mismatch.height:,} "
-          f"({100 * (1 - mismatch.height / scored.height):.3f}%)")
-    print(f"  disagreeing     {mismatch.height} rows across "
-          f"{mismatch['game_id'].n_unique()} games")
+    print(
+        f"  agreeing        {scored.height - mismatch.height:,} "
+        f"({100 * (1 - mismatch.height / scored.height):.3f}%)"
+    )
+    print(f"  disagreeing     {mismatch.height} rows across {mismatch['game_id'].n_unique()} games")
     if mismatch.height:
         print("\n  upstream pbp score columns are unreliable for these games; the")
         print("  schedule is authoritative and supplies the label, so the target")
@@ -146,13 +145,13 @@ def main() -> None:
         exact = (diff == 0).sum()
         print(f"  {label:<24}{exact:>14,}{exact / cmp.height:>9.2%}{diff.max():>10.0f}")
 
-    cpoe = joined.filter(
-        pl.col("off_cpoe").is_not_null() & pl.col("passing_cpoe").is_not_null()
-    )
+    cpoe = joined.filter(pl.col("off_cpoe").is_not_null() & pl.col("passing_cpoe").is_not_null())
     cpoe_diff = (cpoe["off_cpoe"] - cpoe["passing_cpoe"]).abs()
-    print(f"\n  cpoe: mean abs diff {cpoe_diff.mean():.4f}, "
-          f"median {cpoe_diff.median():.4f}, max {cpoe_diff.max():.3f} "
-          f"(n={cpoe.height:,})")
+    print(
+        f"\n  cpoe: mean abs diff {cpoe_diff.mean():.4f}, "
+        f"median {cpoe_diff.median():.4f}, max {cpoe_diff.max():.3f} "
+        f"(n={cpoe.height:,})"
+    )
     print("  (small differences expected: we average cpoe over charted plays,")
     print("   nflverse averages over pass attempts)")
 
@@ -166,13 +165,15 @@ def main() -> None:
     for col in stat_cols:
         e, ln = early[col].null_count(), late[col].null_count()
         if e or ln:
-            rows.append({
-                "column": col,
-                f"pre_{MATRIX_START_SEASON}": e,
-                "pre_pct": round(100 * e / early.height, 2),
-                f"{MATRIX_START_SEASON}_plus": ln,
-                "plus_pct": round(100 * ln / late.height, 3),
-            })
+            rows.append(
+                {
+                    "column": col,
+                    f"pre_{MATRIX_START_SEASON}": e,
+                    "pre_pct": round(100 * e / early.height, 2),
+                    f"{MATRIX_START_SEASON}_plus": ln,
+                    "plus_pct": round(100 * ln / late.height, 3),
+                }
+            )
     if rows:
         print(pl.DataFrame(rows).sort("plus_pct", descending=True))
     else:
@@ -181,6 +182,7 @@ def main() -> None:
 
     # -------------------------------------------------------- hand checks
     header("9. HAND-CHECK GAMES (compare against public box scores)")
+
     def one(frame: pl.DataFrame, *, newest: bool = False) -> list[str]:
         """First (or last) game_id matching a filter, or empty if none."""
         return frame.sort("gameday", descending=newest)["game_id"].head(1).to_list()
@@ -209,13 +211,25 @@ def main() -> None:
             continue
         sched_row = schedules.filter(pl.col("game_id") == gid)
         print(f"\n  {label}")
-        print(f"  {gid}   roof={sched_row['roof'][0]}  temp={sched_row['temp'][0]}  "
-              f"wind={sched_row['wind'][0]}  spread={sched_row['spread_line'][0]}")
-        print(rows_.select(
-            "team", "opponent", "is_home", "is_neutral_site",
-            "points_for", "points_against", "won",
-            "off_plays", "off_epa_per_play", "off_success_rate", "off_cpoe",
-        ))
+        print(
+            f"  {gid}   roof={sched_row['roof'][0]}  temp={sched_row['temp'][0]}  "
+            f"wind={sched_row['wind'][0]}  spread={sched_row['spread_line'][0]}"
+        )
+        print(
+            rows_.select(
+                "team",
+                "opponent",
+                "is_home",
+                "is_neutral_site",
+                "points_for",
+                "points_against",
+                "won",
+                "off_plays",
+                "off_epa_per_play",
+                "off_success_rate",
+                "off_cpoe",
+            )
+        )
 
 
 if __name__ == "__main__":

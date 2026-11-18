@@ -498,10 +498,7 @@ def build_features(
             # state rather than left null, which would drop the game from every
             # fit, and flagged rather than silently filled (see _ROOF_DEFAULT).
             roof_unknown=pl.col("roof").is_null().cast(pl.Int8),
-            is_dome=pl.col("roof")
-            .fill_null(_ROOF_DEFAULT)
-            .is_in(_INDOOR_ROOFS)
-            .cast(pl.Int8),
+            is_dome=pl.col("roof").fill_null(_ROOF_DEFAULT).is_in(_INDOOR_ROOFS).cast(pl.Int8),
             # `location` is authoritative on neutral sites; the team-game table
             # derives its flag from the same column, so this only re-states it.
             # Promoted from a recorded fact to a feature in Phase 3: a neutral
@@ -515,9 +512,7 @@ def build_features(
             split=pl.col("season").map_elements(season_split, return_dtype=pl.String),
         )
         .with_columns(
-            short_week_diff=(pl.col("home_short_week") - pl.col("away_short_week")).cast(
-                pl.Int8
-            ),
+            short_week_diff=(pl.col("home_short_week") - pl.col("away_short_week")).cast(pl.Int8),
             off_bye_diff=(pl.col("home_off_bye") - pl.col("away_off_bye")).cast(pl.Int8),
             # Indoors there is no wind to record, so zero is the observation
             # rather than an imputation - `is_dome` already tells the model
@@ -526,9 +521,7 @@ def build_features(
             # Read off `is_dome` rather than `roof` so the two agree by
             # construction - with a null roof, `~roof.is_in(...)` is itself null
             # and this flag would come through null for every future fixture.
-            weather_unknown=(
-                (pl.col("is_dome") == 0) & pl.col("wind").is_null()
-            ).cast(pl.Int8),
+            weather_unknown=((pl.col("is_dome") == 0) & pl.col("wind").is_null()).cast(pl.Int8),
             wind=pl.col("wind").fill_null(0.0).cast(pl.Float64),
         )
         .drop(

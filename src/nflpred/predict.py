@@ -265,9 +265,7 @@ def week_frame(
     pbp = read_pbp() if pbp is None else pbp
     team_game = team_game_table(pbp, schedules) if team_game is None else team_game
 
-    week_schedule = schedules.filter(
-        (pl.col("season") == season) & (pl.col("week") == week)
-    )
+    week_schedule = schedules.filter((pl.col("season") == season) & (pl.col("week") == week))
     if not week_schedule.height:
         msg = f"no games scheduled for {season} week {week}."
         raise ValueError(msg)
@@ -293,9 +291,7 @@ def week_frame(
         )
         raise ValueError(msg)
 
-    unplayed = week_schedule.filter(
-        pl.col("home_score").is_null() | pl.col("away_score").is_null()
-    )
+    unplayed = week_schedule.filter(pl.col("home_score").is_null() | pl.col("away_score").is_null())
 
     if unplayed.height:
         teams = sorted(set(unplayed["home_team"].to_list() + unplayed["away_team"].to_list()))
@@ -309,14 +305,12 @@ def week_frame(
                 f"{blocking[0]} instead."
             )
             raise ValueError(msg)
-        team_game = pl.concat(
-            [team_game, _synthesized_rows(unplayed, team_game)], how="vertical"
-        )
+        team_game = pl.concat([team_game, _synthesized_rows(unplayed, team_game)], how="vertical")
 
     matrix = build_features(team_game, schedules, pbp)
-    target = matrix.filter(
-        (pl.col("season") == season) & (pl.col("week") == week)
-    ).sort("gameday", "game_id")
+    target = matrix.filter((pl.col("season") == season) & (pl.col("week") == week)).sort(
+        "gameday", "game_id"
+    )
     if not target.height:
         msg = (
             f"{season} week {week} produced no feature rows. The season is before "
@@ -425,9 +419,7 @@ def log_week(
     """Write one week's run and predictions, and return the model version."""
     versions = library_versions()
     train_seasons, calib_seasons = fit.seasons("train"), fit.seasons("calib")
-    suffix = config_suffix(
-        train_seasons, calib_seasons, fit.half_life, ENSEMBLE_FEATURES, versions
-    )
+    suffix = config_suffix(train_seasons, calib_seasons, fit.half_life, ENSEMBLE_FEATURES, versions)
     version = model_version(view.season, view.week, suffix)
 
     connection = connect(path) if path else connect()
@@ -489,9 +481,7 @@ def _run_week(args: argparse.Namespace) -> None:
     view = week_frame(args.season, args.week)
     records, fit, _ = predict_week(view, explain=args.explain)
 
-    state = (
-        f"{len(view.synthesized)} unplayed" if view.live else "all completed"
-    )
+    state = f"{len(view.synthesized)} unplayed" if view.live else "all completed"
     half_life = "off (unweighted)" if fit.half_life is None else f"{fit.half_life:g}"
     print(
         f"{view.season} week {view.week}: {view.target.height} games ({state}), "
@@ -626,9 +616,7 @@ def main() -> None:
         help="attach the Phase 6 explanation to every record",
     )
     parser.add_argument("--json", help="write the records to this path")
-    parser.add_argument(
-        "--no-log", action="store_true", help="do not write to the prediction log"
-    )
+    parser.add_argument("--no-log", action="store_true", help="do not write to the prediction log")
     parser.add_argument(
         "--settle",
         action="store_true",

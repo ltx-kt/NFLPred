@@ -124,18 +124,12 @@ def main() -> None:
     # ------------------------------------------------------------- records
     scored = val.with_columns(
         market_prob=pl.Series(
-            market_probability(
-                val["home_moneyline"].to_numpy(), val["away_moneyline"].to_numpy()
-            )
+            market_probability(val["home_moneyline"].to_numpy(), val["away_moneyline"].to_numpy())
         )
     )
     probability = home_win_probability(stack, val, ENSEMBLE_FEATURES)
-    records = predict_records(
-        stack, build_members(models, platt=fit_elo_platt(calib)), scored
-    )
-    explained = explained_records(
-        records, scored, explainers, coefficients, intercept, probability
-    )
+    records = predict_records(stack, build_members(models, platt=fit_elo_platt(calib)), scored)
+    explained = explained_records(records, scored, explainers, coefficients, intercept, probability)
 
     _hand_check(explained, scored, probability)
     _no_read_share(probability)
@@ -144,9 +138,7 @@ def main() -> None:
     report_written(path, label="mean |SHAP| by feature")
 
 
-def _coefficients(
-    coefficients: Mapping[str, float], intercept: float, origin: float
-) -> None:
+def _coefficients(coefficients: Mapping[str, float], intercept: float, origin: float) -> None:
     """The six weights, and the origin the contributions are measured from."""
     frame = pl.DataFrame(
         [{"member": n, "coefficient": round(coefficients[n], 4)} for n in MEMBER_ORDER]
@@ -241,15 +233,17 @@ def _global_importance(attributions: Mapping[str, Attribution]) -> pl.DataFrame:
     lightgbm 4 leaves), so a handful of untouched columns is expected geometry
     rather than a bug.
     """
-    frame = pl.DataFrame(
-        {"feature": list(ENSEMBLE_FEATURES)}
-        | {
-            name: np.abs(attributions[name].values).mean(axis=0).round(4)
-            for name in MEMBER_ORDER
-        }
-    ).with_columns(
-        total=pl.sum_horizontal([pl.col(n) for n in MEMBER_ORDER]).round(4)
-    ).sort("total", descending=True)
+    frame = (
+        pl.DataFrame(
+            {"feature": list(ENSEMBLE_FEATURES)}
+            | {
+                name: np.abs(attributions[name].values).mean(axis=0).round(4)
+                for name in MEMBER_ORDER
+            }
+        )
+        .with_columns(total=pl.sum_horizontal([pl.col(n) for n in MEMBER_ORDER]).round(4))
+        .sort("total", descending=True)
+    )
 
     print("\nglobal mean |SHAP| per feature per model (validation, own space):")
     print(frame)
@@ -286,9 +280,8 @@ def _hand_check(
     edge = np.abs(probability - 0.5)
     correct = (probability >= 0.5) == (y >= 0.5)
     agreement = np.array([int(r["agreement"].split("/")[0]) for r in explained])
-    backup = (
-        (val["home_backup_qb_starting"].to_numpy() == 1)
-        | (val["away_backup_qb_starting"].to_numpy() == 1)
+    backup = (val["home_backup_qb_starting"].to_numpy() == 1) | (
+        val["away_backup_qb_starting"].to_numpy() == 1
     )
 
     picks = {
@@ -298,9 +291,7 @@ def _hand_check(
         ),
         "a 5/6 member disagreement": np.argmax(np.where(agreement == 5, edge, -1.0)),
         "a sub-0.03 no-read game": np.argmin(edge),
-        "a game with a non-usual starting quarterback": np.argmax(
-            np.where(backup, edge, -1.0)
-        ),
+        "a game with a non-usual starting quarterback": np.argmax(np.where(backup, edge, -1.0)),
     }
 
     print("\n" + "=" * 78)
@@ -353,9 +344,7 @@ def _importance_plot(importance: pl.DataFrame, top: int = 12) -> Path:
 
     ax.set_yticks(positions, labels, fontsize=8)
     ax.set_xlabel("mean |SHAP| (each model in its own output space, stacked)")
-    ax.set_title(
-        f"Phase 6 attribution - validation {VAL_SEASONS[0]}-{VAL_SEASONS[1]}"
-    )
+    ax.set_title(f"Phase 6 attribution - validation {VAL_SEASONS[0]}-{VAL_SEASONS[1]}")
     ax.legend(loc="lower right", fontsize=8)
     fig.tight_layout()
 

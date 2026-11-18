@@ -102,9 +102,7 @@ def save_models(
         "models": sorted(models),
         "matrix_path": str(matrix_path) if matrix_path else None,
         "matrix_sha256_16": _matrix_hash(matrix_path) if matrix_path else None,
-        "splits": {
-            name: split_frame(matrix, name).height for name in ("train", "calib", "val")
-        },
+        "splits": {name: split_frame(matrix, name).height for name in ("train", "calib", "val")},
         "versions": library_versions(),
         "fingerprint": {
             name: fingerprint(model, matrix, features) for name, model in models.items()
@@ -176,9 +174,7 @@ def load_models(
                 f"{len(expected)} - the matrix has the wrong 'val' split"
             )
         elif not np.allclose(actual, expected, atol=10.0**-FINGERPRINT_PLACES):
-            mismatched.append(
-                f"  {name}: manifest {expected[:3]}... vs loaded {actual[:3]}..."
-            )
+            mismatched.append(f"  {name}: manifest {expected[:3]}... vs loaded {actual[:3]}...")
         models[name] = model
 
     if mismatched:

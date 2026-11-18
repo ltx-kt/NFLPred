@@ -143,6 +143,7 @@ BANNED_PHRASES: Final[tuple[str, ...]] = (
 
 # ----------------------------------------------------------- the glossary
 
+
 @dataclass(frozen=True)
 class Feature:
     """One column, in language a reader who does not know the schema can use.
@@ -217,15 +218,11 @@ FEATURE_GLOSSARY: Final[dict[str, Feature]] = {
     "net_pass_epa_r8_diff": _diff("net passing EPA per play over the last 8 games", "epa"),
     "net_rush_epa_r8_diff": _diff("net rushing EPA per play over the last 8 games", "epa"),
     "net_yards_per_play_r8_diff": _diff("net yards per play over the last 8 games", "yards"),
-    "net_explosive_r8_diff": _diff(
-        "net rate of 20-yard plays over the last 8 games", "pct"
-    ),
+    "net_explosive_r8_diff": _diff("net rate of 20-yard plays over the last 8 games", "pct"),
     "net_points_r8_diff": _diff("net points per game over the last 8 games", "points"),
     "net_third_down_r8_diff": _diff("net third-down rate over the last 8 games", "pct"),
     # Sacks allowed minus sacks generated: positive is the bad direction.
-    "net_sack_r8_diff": _diff(
-        "net sack rate over the last 8 games", "pct", favours="away"
-    ),
+    "net_sack_r8_diff": _diff("net sack rate over the last 8 games", "pct", favours="away"),
     # --- the same pass/rush signal, offence and defence kept apart
     "home_pass_epa_matchup_r8": _diff(
         "passing EPA per play against the opposing pass defence", "epa"
@@ -327,6 +324,7 @@ def describe(name: str, value: float, home: str, away: str) -> str:
 
 
 # --------------------------------------------------------- the attributions
+
 
 @dataclass(frozen=True)
 class Attribution:
@@ -556,14 +554,13 @@ def attribute(explainer: Explainer, x: np.ndarray) -> Attribution:
     return Attribution(values, float(base), explainer.space)
 
 
-def attribute_all(
-    explainers: Mapping[str, Explainer], x: np.ndarray
-) -> dict[str, Attribution]:
+def attribute_all(explainers: Mapping[str, Explainer], x: np.ndarray) -> dict[str, Attribution]:
     """Every member's attribution, in :data:`~nflpred.modeling.ensemble.MEMBER_ORDER`."""
     return {name: attribute(explainers[name], x) for name in MEMBER_ORDER}
 
 
 # ------------------------------------------------------------ the combination
+
 
 def meta_terms(stack: ClassifierMixin) -> tuple[dict[str, float], float]:
     """The meta-learner's per-member weights and its intercept.
@@ -633,6 +630,7 @@ def base_logit(
 
 # ------------------------------------------------------------- ranked factors
 
+
 def top_factors(
     contributions: np.ndarray,
     row: Mapping[str, Any],
@@ -695,6 +693,7 @@ def top_factors(
 
 # ------------------------------------------------------ confidence, decomposed
 
+
 def confidence_drivers(
     probability: float,
     record: Mapping[str, Any],
@@ -726,9 +725,7 @@ def confidence_drivers(
     for_pick = probability if pick == record["home_team"] else 1.0 - probability
 
     if edge < NO_READ_EDGE:
-        signal = (
-            f"no read - {probability:.1%} is within {NO_READ_EDGE:.2f} of a coin flip"
-        )
+        signal = f"no read - {probability:.1%} is within {NO_READ_EDGE:.2f} of a coin flip"
     elif edge < CONFIDENCE_BANDS[2][0]:
         # D-21: the two middle bands could not be told apart on validation, so
         # they are presented as one undifferentiated read. The bands themselves
@@ -744,8 +741,7 @@ def confidence_drivers(
     agreed = sum(vote["pick"] == pick for vote in votes.values())
     spread = float(np.std([vote["home_win_prob"] for vote in votes.values()]))
     agreement = (
-        f"{agreed} of {len(votes)} members pick {pick}; "
-        f"member probabilities spread {spread:.3f}"
+        f"{agreed} of {len(votes)} members pick {pick}; member probabilities spread {spread:.3f}"
     )
     if agreed < len(votes):
         dissenters = [n for n, v in votes.items() if v["pick"] != pick]
@@ -818,6 +814,7 @@ def dissent(
 
 
 # ------------------------------------------------------------- the narrative
+
 
 def narrative(
     probability: float,
@@ -909,6 +906,7 @@ def narrative(
 
 # ------------------------------------------------------------- the assembly
 
+
 def explain_game(
     record: Mapping[str, Any],
     row: Mapping[str, Any],
@@ -992,9 +990,7 @@ def explain_game(
                 "toward the pick, so on an away pick the two run opposite in sign"
             ),
             "base_prob": round(float(_sigmoid(origin)), 4),
-            "reconciliation": round(
-                abs(total - (_logit(probability) - origin)), 9
-            ),
+            "reconciliation": round(abs(total - (_logit(probability) - origin)), 9),
         },
     }
 

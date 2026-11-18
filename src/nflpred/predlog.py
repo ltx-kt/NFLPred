@@ -374,8 +374,7 @@ def settle(connection: sqlite3.Connection, results: pl.DataFrame) -> int:
     the system never had an opinion on is not evidence about the system.
     """
     predicted = {
-        row["game_id"]
-        for row in connection.execute("SELECT DISTINCT game_id FROM predictions")
+        row["game_id"] for row in connection.execute("SELECT DISTINCT game_id FROM predictions")
     }
     settled_at = datetime.now(UTC).isoformat(timespec="seconds")
 
@@ -528,13 +527,12 @@ def settled_member_predictions(connection: sqlite3.Connection) -> pl.DataFrame:
 
 def summary(connection: sqlite3.Connection) -> dict[str, Any]:
     """Counts a checkpoint can print: rows, versions, settled fraction."""
+
     def scalar(sql: str) -> int:
         return int(next(iter(connection.execute(sql)))[0])
 
     predictions = scalar("SELECT COUNT(*) FROM predictions")
-    settled = scalar(
-        "SELECT COUNT(*) FROM predictions p JOIN outcomes o USING (game_id)"
-    )
+    settled = scalar("SELECT COUNT(*) FROM predictions p JOIN outcomes o USING (game_id)")
     return {
         "runs": scalar("SELECT COUNT(*) FROM runs"),
         "predictions": predictions,
@@ -602,9 +600,7 @@ def rolling_brier(
     if frame.is_empty():
         return pl.DataFrame(), pl.DataFrame()
 
-    scored = frame.with_columns(
-        squared_error=(pl.col("home_win_prob") - pl.col("home_win")) ** 2
-    )
+    scored = frame.with_columns(squared_error=(pl.col("home_win_prob") - pl.col("home_win")) ** 2)
 
     def aggregate(subset: pl.DataFrame) -> pl.DataFrame:
         return (

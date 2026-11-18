@@ -176,9 +176,12 @@ def main() -> None:
             print(f"--- {name} on {set_name}, {grid.height} cells")
             print(grid)
             best = grid.row(0, named=True)
-            winners.setdefault(name, {})[set_name] = ", ".join(
-                f"{k}={v}" for k, v in best.items() if k not in {"cv_log_loss", "seconds"}
-            ) + f"   -> {best['cv_log_loss']:.4f}"
+            winners.setdefault(name, {})[set_name] = (
+                ", ".join(
+                    f"{k}={v}" for k, v in best.items() if k not in {"cv_log_loss", "seconds"}
+                )
+                + f"   -> {best['cv_log_loss']:.4f}"
+            )
             print()
 
     print("=" * 70)
