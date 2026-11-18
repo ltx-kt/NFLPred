@@ -24,7 +24,6 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
-from hashlib import sha256
 from pathlib import Path
 from typing import Any, Final
 
@@ -33,7 +32,7 @@ import numpy as np
 import polars as pl
 from sklearn.calibration import CalibratedClassifierCV
 
-from nflpred._provenance import library_versions
+from nflpred._provenance import library_versions, short_hash
 from nflpred.config import MODELS_DIR
 from nflpred.modeling.base import home_win_probability, split_frame
 
@@ -68,7 +67,7 @@ def fingerprint(
 
 def _matrix_hash(path: Path) -> str:
     """Content hash of the feature matrix the models were fitted from."""
-    return sha256(path.read_bytes()).hexdigest()[:16]
+    return short_hash(path.read_bytes())
 
 
 def save_models(

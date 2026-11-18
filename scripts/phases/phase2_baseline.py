@@ -18,9 +18,6 @@ Run::
 from __future__ import annotations
 
 import polars as pl
-from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
 
 from nflpred.config import FEATURE_MATRIX_PATH, TRAIN_SEASONS, VAL_SEASONS
 from nflpred.evaluate import (
@@ -32,28 +29,10 @@ from nflpred.evaluate import (
 from nflpred.features.build import BASELINE_FEATURES, to_training_arrays
 from nflpred.modeling.base import split_frame
 
-from _shared import report_path, report_written, require_matrix
+from _shared import baseline_model, report_path, report_written, require_matrix
 
 pl.Config.set_tbl_rows(20)
 pl.Config.set_tbl_width_chars(120)
-
-
-def _model() -> Pipeline:
-    """Scaled inputs and L2, exactly as the spec's base-estimator list says.
-
-    L2 is left implicit: scikit-learn 1.8 deprecated the ``penalty`` keyword and
-    made L2 with ``C`` the default, so passing ``penalty="l2"`` now warns while
-    doing nothing. ``C=1.0`` is that L2 penalty.
-
-    No hyperparameter search. A tuned baseline is a worse baseline: the bar is
-    supposed to be what a plain model gets from these ten features.
-    """
-    return Pipeline(
-        [
-            ("scale", StandardScaler()),
-            ("lr", LogisticRegression(C=1.0, max_iter=1000)),
-        ]
-    )
 
 
 def main() -> None:
@@ -68,7 +47,7 @@ def main() -> None:
     )
 
     x_train, y_train, w_train = to_training_arrays(train)
-    model = _model()
+    model = baseline_model()
     model.fit(x_train, y_train, lr__sample_weight=w_train)
 
     # ------------------------------------------------------------ inspection

@@ -43,7 +43,7 @@ for, forward-chained and honest about the rows it drops. See D-20.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import Any, Final
+from typing import Any, Final, Self
 
 import numpy as np
 import polars as pl
@@ -112,8 +112,48 @@ def confidence(probability: float) -> str:
 
 # --------------------------------------------------------------- the members
 
+#: The label set every estimator here reports: away win, home win.
+_CLASSES: Final[np.ndarray] = np.array([0.0, 1.0])
 
-class PrefitMember(ClassifierMixin, BaseEstimator):
+
+def _select(X: np.ndarray, columns: Sequence[int] | None) -> np.ndarray:
+    """``columns`` of ``X`` as floats, defaulting to the 16 base columns."""
+    return np.asarray(X, dtype=float)[:, list(BASE_COLUMNS if columns is None else columns)]
+
+
+class _BinaryClassifier(ClassifierMixin, BaseEstimator):
+    """Shared base: a thresholded ``predict`` over the subclass's ``predict_proba``.
+
+    `ClassifierMixin` stays first in the MRO for every subclass - see the module
+    docstring for why the order matters.
+    """
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        return (self.predict_proba(X)[:, 1] >= PICK_THRESHOLD).astype(float)
+
+
+class _Prefit(_BinaryClassifier):
+    """Already fitted: ``fit`` learns nothing and ``clone`` returns the same object.
+
+    That pair is what keeps `VotingClassifier` and `StackingClassifier` from
+    refitting a member, whichever of them holds it.
+    """
+
+    def fit(
+        self, X: np.ndarray, y: np.ndarray | None = None, sample_weight: np.ndarray | None = None
+    ) -> Self:
+        """Learn nothing. The wrapped model is already fitted."""
+        self.classes_ = _CLASSES
+        return self
+
+    def __sklearn_clone__(self) -> Self:
+        return self
+
+    def __sklearn_is_fitted__(self) -> bool:
+        return True
+
+
+class PrefitMember(_Prefit):
     """One already-fitted estimator, presented to sklearn as an unfitted member.
 
     ``fit`` is a no-op and ``__sklearn_clone__`` returns ``self``, so neither
@@ -133,31 +173,11 @@ class PrefitMember(ClassifierMixin, BaseEstimator):
         self.estimator = estimator
         self.columns = columns
 
-    def fit(
-        self, X: np.ndarray, y: np.ndarray | None = None, sample_weight: np.ndarray | None = None
-    ) -> PrefitMember:
-        """Learn nothing. The wrapped estimator is already fitted."""
-        self.classes_ = np.array([0.0, 1.0])
-        return self
-
-    def __sklearn_clone__(self) -> PrefitMember:
-        return self
-
-    def __sklearn_is_fitted__(self) -> bool:
-        return True
-
-    def _slice(self, X: np.ndarray) -> np.ndarray:
-        columns = BASE_COLUMNS if self.columns is None else self.columns
-        return np.asarray(X, dtype=float)[:, list(columns)]
-
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
-        return self.estimator.predict_proba(self._slice(X))
-
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        return (self.predict_proba(X)[:, 1] >= PICK_THRESHOLD).astype(float)
+        return self.estimator.predict_proba(_select(X, self.columns))
 
 
-class ColumnSubset(ClassifierMixin, BaseEstimator):
+class ColumnSubset(_BinaryClassifier):
     """The refitting twin of :class:`PrefitMember`, for the spec-literal stack.
 
     Normal clone semantics and a real ``fit``: :class:`TimeSeriesStack` needs
@@ -173,15 +193,11 @@ class ColumnSubset(ClassifierMixin, BaseEstimator):
         self.estimator = estimator
         self.columns = columns
 
-    def _slice(self, X: np.ndarray) -> np.ndarray:
-        columns = BASE_COLUMNS if self.columns is None else self.columns
-        return np.asarray(X, dtype=float)[:, list(columns)]
-
     def fit(
         self, X: np.ndarray, y: np.ndarray, sample_weight: np.ndarray | None = None
     ) -> ColumnSubset:
         self.estimator_ = clone(self.estimator)
-        x = self._slice(X)
+        x = _select(X, self.columns)
         if sample_weight is None:
             self.estimator_.fit(x, y)
         else:
@@ -190,13 +206,10 @@ class ColumnSubset(ClassifierMixin, BaseEstimator):
         return self
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
-        return self.estimator_.predict_proba(self._slice(X))
-
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        return (self.predict_proba(X)[:, 1] >= PICK_THRESHOLD).astype(float)
+        return self.estimator_.predict_proba(_select(X, self.columns))
 
 
-class EloMember(ClassifierMixin, BaseEstimator):
+class EloMember(_Prefit):
     """Elo as an ensemble member: read column 16, optionally Platt-scale it.
 
     Nothing is fitted here in either mode. With ``platt=None`` this is exactly
@@ -211,28 +224,12 @@ class EloMember(ClassifierMixin, BaseEstimator):
         self.platt = platt
         self.column = column
 
-    def fit(
-        self, X: np.ndarray, y: np.ndarray | None = None, sample_weight: np.ndarray | None = None
-    ) -> EloMember:
-        """Learn nothing. The rating system already emitted a probability."""
-        self.classes_ = np.array([0.0, 1.0])
-        return self
-
-    def __sklearn_clone__(self) -> EloMember:
-        return self
-
-    def __sklearn_is_fitted__(self) -> bool:
-        return True
-
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         column = ELO_COLUMN if self.column is None else self.column
         probability = np.asarray(X, dtype=float)[:, column]
         if self.platt is not None:
             probability = elo_platt_probability(self.platt, probability)
         return np.column_stack([1.0 - probability, probability])
-
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        return (self.predict_proba(X)[:, 1] >= PICK_THRESHOLD).astype(float)
 
 
 Member = tuple[str, ClassifierMixin]
@@ -316,7 +313,7 @@ def prefit_stack(
     return stack
 
 
-class TimeSeriesStack(ClassifierMixin, BaseEstimator):
+class TimeSeriesStack(_BinaryClassifier):
     """Forward-chained out-of-fold stacking - the spec's variant, hand-rolled.
 
     `StackingClassifier` cannot take a `TimeSeriesSplit` (see the module
@@ -376,7 +373,7 @@ class TimeSeriesStack(ClassifierMixin, BaseEstimator):
             full.fit(x, y, sample_weight=sample_weight)
             self.estimators_.append(full)
 
-        self.classes_ = np.array([0.0, 1.0])
+        self.classes_ = _CLASSES
         return self
 
     def _meta_features(self, X: np.ndarray) -> np.ndarray:
@@ -385,9 +382,6 @@ class TimeSeriesStack(ClassifierMixin, BaseEstimator):
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         return self.final_estimator_.predict_proba(self._meta_features(X))
-
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        return (self.predict_proba(X)[:, 1] >= PICK_THRESHOLD).astype(float)
 
 
 def oof_stack(features: Sequence[str] = CORE_FEATURES, n_splits: int = 5) -> TimeSeriesStack:

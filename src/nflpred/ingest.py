@@ -23,7 +23,6 @@ Run directly to populate the cache::
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import time
 import warnings
@@ -37,6 +36,7 @@ import nflreadpy as nfl
 import polars as pl
 from nflreadpy.config import update_config
 
+from nflpred._provenance import short_hash
 from nflpred.config import (
     DATA_RAW,
     INGEST_SEASONS,
@@ -66,7 +66,7 @@ update_config(cache_mode="off", verbose=False)
 def _columns_hash(columns: Sequence[str]) -> str:
     """Stable short hash of a column selection, order-insensitive."""
     joined = "\n".join(sorted(columns))
-    return hashlib.sha256(joined.encode()).hexdigest()[:16]
+    return short_hash(joined)
 
 
 def load_manifest() -> dict[str, Any]:

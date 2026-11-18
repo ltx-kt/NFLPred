@@ -27,9 +27,7 @@ from collections.abc import Sequence
 
 import numpy as np
 import polars as pl
-from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
 
 from nflpred.config import (
     FEATURE_MATRIX_GT_PATH,
@@ -56,33 +54,18 @@ from nflpred.features.build import (
 )
 from nflpred.modeling.base import split_frame
 
-from _shared import checked, report_path, report_written, require_matrix
+from _shared import baseline_model, checked, report_path, report_written, require_matrix
 
 pl.Config.set_tbl_rows(40)
 pl.Config.set_tbl_width_chars(160)
 pl.Config.set_fmt_str_lengths(40)
 
 
-def _model() -> Pipeline:
-    """The Phase 2 estimator, unchanged and untuned.
-
-    Deliberately not improved. If Phase 3's features are worth something, they
-    are worth something to the same model that measured the bar; swapping in a
-    better estimator at the same time would make the comparison meaningless.
-    """
-    return Pipeline(
-        [
-            ("scale", StandardScaler()),
-            ("lr", LogisticRegression(C=1.0, max_iter=1000)),
-        ]
-    )
-
-
 def _fit_predict(
     train: pl.DataFrame, evaluate: pl.DataFrame, features: Sequence[str]
 ) -> tuple[np.ndarray, Pipeline]:
     x_train, y_train, w_train = to_training_arrays(train, features)
-    model = _model()
+    model = baseline_model()
     model.fit(x_train, y_train, lr__sample_weight=w_train)
 
     x_eval = evaluate.select(features).to_numpy().astype(float)

@@ -31,6 +31,7 @@ import polars as pl
 from nflpred.config import ELO_HFA, ELO_K, ELO_MOV, TRAIN_SEASONS
 from nflpred.evaluate import accuracy, brier, log_loss
 from nflpred.features.elo import build_elo
+from nflpred.features.pbp_agg import outcome
 from nflpred.ingest import read_schedules
 
 #: The grid. Small on purpose - four K values spanning the range anyone
@@ -59,9 +60,7 @@ def _score(schedules: pl.DataFrame, k: float, hfa: float, mov: bool) -> dict[str
         .filter(pl.col("home_score").is_not_null())
     )
 
-    margin = train["home_score"] - train["away_score"]
-    outcome = pl.when(margin > 0).then(1.0).when(margin < 0).then(0.0).otherwise(0.5)
-    y = train.select(outcome.alias("y"))["y"].to_numpy()
+    y = train.select(outcome(pl.col("home_score") - pl.col("away_score")))[:, 0].to_numpy()
     p = train["elo_prob"].to_numpy()
 
     return {

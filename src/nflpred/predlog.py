@@ -46,7 +46,6 @@ import json
 import sqlite3
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
-from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
@@ -54,6 +53,7 @@ import numpy as np
 import polars as pl
 
 from nflpred._provenance import library_versions as library_versions
+from nflpred._provenance import short_hash
 from nflpred.config import PREDICTIONS_DB
 
 #: Length of the configuration hash in ``model_version``. Six hex characters is
@@ -180,7 +180,7 @@ def config_suffix(
         },
         sort_keys=True,
     )
-    return sha256(payload.encode()).hexdigest()[:SUFFIX_LENGTH]
+    return short_hash(payload, SUFFIX_LENGTH)
 
 
 def model_version(season: int, week: int, suffix: str) -> str:
@@ -202,7 +202,7 @@ def feature_hash(values: Sequence[float]) -> str:
     are a different input.
     """
     payload = ",".join(f"{float(v):.10g}" for v in values)
-    return sha256(payload.encode()).hexdigest()[:16]
+    return short_hash(payload)
 
 
 # ------------------------------------------------------------- writing

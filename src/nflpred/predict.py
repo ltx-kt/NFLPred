@@ -61,13 +61,13 @@ import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
-from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import polars as pl
 
+from nflpred._provenance import short_hash
 from nflpred.backtest import WeeklyFit, fit_week
 from nflpred.config import (
     CALIB_WINDOW_SEASONS,
@@ -80,7 +80,7 @@ from nflpred.config import (
 )
 from nflpred.evaluate import market_probability
 from nflpred.features.build import build_features
-from nflpred.features.pbp_agg import build_team_game
+from nflpred.features.pbp_agg import build_team_game, outcome
 from nflpred.ingest import read_pbp, read_schedules
 from nflpred.modeling.base import home_win_probability
 from nflpred.modeling.ensemble import ENSEMBLE_FEATURES, meta_coefficients, predict_records
@@ -361,9 +361,7 @@ def _matrix_fingerprint(frame: pl.DataFrame) -> str:
     frame's contents answers the same question the manifest's hash answers:
     were these predictions made from the data we think they were.
     """
-    digest = sha256()
-    digest.update(frame.hash_rows().to_numpy().tobytes())
-    return digest.hexdigest()[:16]
+    return short_hash(frame.hash_rows().to_numpy().tobytes())
 
 
 def predict_week(
@@ -521,11 +519,7 @@ def _settle(_: argparse.Namespace) -> None:
         "game_id",
         "home_score",
         "away_score",
-        home_win=pl.when(pl.col("home_score") > pl.col("away_score"))
-        .then(1.0)
-        .when(pl.col("home_score") < pl.col("away_score"))
-        .then(0.0)
-        .otherwise(0.5),
+        home_win=outcome(pl.col("home_score") - pl.col("away_score")),
     )
 
     connection = connect()

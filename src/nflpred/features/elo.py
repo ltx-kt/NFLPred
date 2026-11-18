@@ -39,6 +39,7 @@ from nflpred.config import (
     ELO_SEASON_REGRESSION,
     FIRST_SEASON,
     GAME_KEYS,
+    TIE,
 )
 
 #: 538's damping constant. The multiplier is ``ln(margin + 1)`` scaled by
@@ -160,7 +161,7 @@ def _run(
         home_score, away_score = game["home_score"], game["away_score"]
         if home_score is not None and away_score is not None:
             margin = int(home_score) - int(away_score)
-            actual_home = 1.0 if margin > 0 else 0.0 if margin < 0 else 0.5
+            actual_home = 1.0 if margin > 0 else 0.0 if margin < 0 else TIE
 
             if mov:
                 adjusted_home = elo_home + advantage

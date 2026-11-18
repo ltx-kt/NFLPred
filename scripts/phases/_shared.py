@@ -11,7 +11,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from nflpred.config import FEATURE_MATRIX_GT_PATH, REPORTS_DIR, ROOT
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+
+from nflpred.config import FEATURE_MATRIX_GT_PATH, LOGREG_MAX_ITER, REPORTS_DIR, ROOT
 from nflpred.evaluate import halt_if_suspicious
 
 if TYPE_CHECKING:
@@ -65,3 +69,23 @@ def checked(
         print(table)
         raise
     return table
+
+
+def baseline_model() -> Pipeline:
+    """Scaled inputs and L2, exactly as the spec's base-estimator list says.
+
+    L2 is left implicit: scikit-learn 1.8 deprecated the ``penalty`` keyword and
+    made L2 with ``C`` the default, so passing ``penalty="l2"`` now warns while
+    doing nothing. ``C=1.0`` is that L2 penalty.
+
+    No hyperparameter search. A tuned baseline is a worse baseline: the bar is
+    supposed to be what a plain model gets from its features. Phase 3 reuses it
+    unchanged so its feature comparison is measured by the same model that set
+    the Phase 2 bar.
+    """
+    return Pipeline(
+        [
+            ("scale", StandardScaler()),
+            ("lr", LogisticRegression(C=1.0, max_iter=LOGREG_MAX_ITER)),
+        ]
+    )

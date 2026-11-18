@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import polars as pl
 
-from nflpred.config import EXPLOSIVE_YARDS, GAME_KEYS, POSTSEASON_TYPES
+from nflpred.config import EXPLOSIVE_YARDS, GAME_KEYS, POSTSEASON_TYPES, TIE
 
 #: Plays counted toward offensive rate statistics, before any win-probability
 #: filter.
@@ -217,11 +217,7 @@ def _spine(schedules: pl.DataFrame) -> pl.DataFrame:
         .with_columns(
             # Ties are kept, not dropped (D-4). `won` is a float so a tie is 0.5;
             # `result_class` keeps the three-way distinction legible.
-            won=pl.when(pl.col("margin") > 0)
-            .then(1.0)
-            .when(pl.col("margin") < 0)
-            .then(0.0)
-            .otherwise(0.5),
+            won=outcome(pl.col("margin")),
             result_class=pl.when(pl.col("margin") > 0)
             .then(pl.lit("win"))
             .when(pl.col("margin") < 0)
@@ -230,6 +226,11 @@ def _spine(schedules: pl.DataFrame) -> pl.DataFrame:
         )
         .drop("location")
     )
+
+
+def outcome(margin: pl.Expr) -> pl.Expr:
+    """The D-4 result encoding of a points margin: 1.0 win, 0.0 loss, TIE a tie."""
+    return pl.when(margin > 0).then(1.0).when(margin < 0).then(0.0).otherwise(TIE)
 
 
 def build_team_game(
