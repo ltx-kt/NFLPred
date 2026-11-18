@@ -6,7 +6,7 @@ import { CalibrationChart } from "../components/charts/CalibrationChart";
 import { ChartFrame } from "../components/charts/ChartFrame";
 import { MemberBrierChart } from "../components/charts/MemberBrierChart";
 import { pct, pctRange, prob3, signedPct } from "../lib/format";
-import { byModel } from "../lib/metrics";
+import { byModel, METRIC_HELP } from "../lib/metrics";
 
 export function Model() {
   const perf = usePerformance();
@@ -43,14 +43,26 @@ export function Model() {
             label="model accuracy"
             value={pct(ens.accuracy, 1)}
             sub={mkt ? `market ${pct(mkt.accuracy, 1)}` : undefined}
+            help={METRIC_HELP.accuracy}
           />
-          <StatTile label="log loss" value={prob3(ens.log_loss)} sub="ln 2 = 0.693 is no skill" />
-          <StatTile label="brier" value={prob3(ens.brier)} sub="0.25 = always 50%" />
+          <StatTile
+            label="log loss"
+            value={prob3(ens.log_loss)}
+            sub="ln 2 = 0.693 is no skill"
+            help={METRIC_HELP.logLoss}
+          />
+          <StatTile
+            label="brier"
+            value={prob3(ens.brier)}
+            sub="0.25 = always 50%"
+            help={METRIC_HELP.brier}
+          />
           <StatTile
             label="vs elo baseline"
             value={elo ? signedPct(ens.accuracy - elo.accuracy) : "-"}
             sub="accuracy gain over Elo alone"
             tone={elo && ens.accuracy - elo.accuracy >= 0 ? "good" : "default"}
+            help={METRIC_HELP.vsElo}
           />
         </div>
       )}

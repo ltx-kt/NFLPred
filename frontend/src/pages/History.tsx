@@ -6,7 +6,7 @@ import { EmptyNote, ErrorNote, Spinner } from "../components/Feedback";
 import { FutureWeekBoard } from "../components/FutureWeekBoard";
 import { StatTile } from "../components/StatTile";
 import { pct, prob3, signedPct } from "../lib/format";
-import { byModel } from "../lib/metrics";
+import { byModel, METRIC_HELP } from "../lib/metrics";
 import { WeekBoard } from "../components/WeekBoard";
 
 export function History() {
@@ -135,9 +135,20 @@ function SeasonSummary({ season }: { season: number }) {
         label="model accuracy"
         value={pct(ens.accuracy, 1)}
         sub={`${data.n_settled} settled games`}
+        help={METRIC_HELP.accuracy}
       />
-      <StatTile label="log loss" value={prob3(ens.log_loss)} sub="lower is better" />
-      <StatTile label="brier" value={prob3(ens.brier)} sub="lower is better" />
+      <StatTile
+        label="log loss"
+        value={prob3(ens.log_loss)}
+        sub="lower is better"
+        help={METRIC_HELP.logLoss}
+      />
+      <StatTile
+        label="brier"
+        value={prob3(ens.brier)}
+        sub="lower is better"
+        help={METRIC_HELP.brier}
+      />
       <StatTile
         label="vs market"
         value={edgeVsMarket == null ? "-" : signedPct(edgeVsMarket)}
@@ -147,6 +158,7 @@ function SeasonSummary({ season }: { season: number }) {
             : undefined
         }
         tone={edgeVsMarket != null && edgeVsMarket >= 0 ? "good" : "critical"}
+        help={METRIC_HELP.vsMarket}
       />
     </div>
   );
