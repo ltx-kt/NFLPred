@@ -42,14 +42,14 @@ from nflpred.evaluate import (
     metrics_table,
     reliability_diagram,
 )
-from nflpred.features.build import (
+from nflpred.features.build import to_training_arrays
+from nflpred.features.sets import (
     BASELINE_FEATURES,
     ELO_FEATURES,
     PHASE3_FEATURES,
     PHASE3_FEATURES_MARKET,
     PHASE3_FEATURES_NO_TO,
     QB_FEATURES,
-    to_training_arrays,
     wide_features,
 )
 from nflpred.modeling.base import split_frame

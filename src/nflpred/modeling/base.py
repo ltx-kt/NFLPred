@@ -47,7 +47,8 @@ from nflpred.config import (
     N_JOBS,
     RANDOM_STATE,
 )
-from nflpred.features.build import CORE_FEATURES, to_training_arrays
+from nflpred.features.build import to_training_arrays
+from nflpred.features.sets import CORE_FEATURES
 
 #: Calibrating a frozen estimator with sample weights warns that the weights
 #: reached only the calibrator. That is precisely the intent - the base is

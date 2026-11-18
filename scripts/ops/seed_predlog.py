@@ -3,7 +3,7 @@
 The log (`data/predictions.sqlite`) only holds the handful of weeks that have
 been run by hand. A history browser and a calibration curve need more than that,
 so this script walks a range of completed seasons and, for each week, makes the
-**same three calls** `nflpred.predict._run_week` makes:
+**same three calls** `nflpred.predict.__main__._run_week` makes:
 
     week_frame(season, week)  ->  predict_week(view)  ->  log_week(view, fit, records)
 
@@ -40,14 +40,9 @@ import polars as pl
 
 from nflpred.config import TEST_SEASONS
 from nflpred.ingest import read_pbp, read_schedules
-from nflpred.predict import (
-    connect,
-    log_week,
-    predict_week,
-    summary,
-    team_game_table,
-    week_frame,
-)
+from nflpred.predict.run import log_week, predict_week
+from nflpred.predict.week import team_game_table, week_frame
+from nflpred.predlog import connect, summary
 
 
 def completed_weeks(schedules: pl.DataFrame, first: int, last: int) -> list[tuple[int, int]]:

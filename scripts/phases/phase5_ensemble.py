@@ -60,7 +60,7 @@ from nflpred.evaluate import (
     metrics_table,
     reliability_diagram,
 )
-from nflpred.features.build import CORE_FEATURES
+from nflpred.features.sets import CORE_FEATURES
 from nflpred.modeling.base import (
     elo_platt_probability,
     elo_probability,

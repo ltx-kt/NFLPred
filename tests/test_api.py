@@ -1,7 +1,7 @@
 """The read-only API, exercised over a throwaway log built by the live path.
 
 The fixture runs two completed weeks through the same `week_frame` ->
-`predict_week` -> `log_week` calls `nflpred.predict._run_week` makes, into a
+`predict_week` -> `log_week` calls `nflpred.predict.__main__._run_week` makes, into a
 temp-file log, then settles one of them. So every row the API reads here was
 written exactly as a real weekly run writes it - no hand-built records - and the
 tests can assert on the settled/unsettled split, the missing-explanation path,
@@ -26,7 +26,8 @@ from fastapi.testclient import TestClient  # noqa: E402
 from nflpred.api.db import log_connection  # noqa: E402
 from nflpred.api.main import app  # noqa: E402
 from nflpred.ingest import read_pbp, read_schedules  # noqa: E402
-from nflpred.predict import log_week, predict_week, team_game_table, week_frame  # noqa: E402
+from nflpred.predict.run import log_week, predict_week  # noqa: E402
+from nflpred.predict.week import team_game_table, week_frame  # noqa: E402
 from nflpred.predlog import connect, settle  # noqa: E402
 
 SETTLED_WEEK = (2023, 5)

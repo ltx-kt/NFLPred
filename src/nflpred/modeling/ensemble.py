@@ -53,7 +53,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import TimeSeriesSplit
 
 from nflpred.config import LOGREG_MAX_ITER, PICK_THRESHOLD, RANDOM_STATE
-from nflpred.features.build import CORE_FEATURES, to_training_arrays
+from nflpred.features.build import to_training_arrays
+from nflpred.features.sets import CORE_FEATURES
 from nflpred.modeling.base import (
     build_models,
     elo_platt_probability,

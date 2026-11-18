@@ -177,11 +177,11 @@ Data flows one direction, from raw pull to logged prediction to dashboard:
   nflpred/modeling/ensemble.py ... 5 estimators + Elo into a stacked ensemble
         |
         v
-  nflpred/explain.py ............. per-member SHAP, confidence decomposition, narrative
+  nflpred/explain/ ............... per-member SHAP, confidence decomposition, narrative
         |
         v
   nflpred/backtest.py ........... walk-forward refit + recency weighting
-  nflpred/predict.py ........... weekly CLI (incl. synthesizing unplayed games)
+  nflpred/predict/ ............. weekly CLI (incl. synthesizing unplayed games)
         |
         v
   data/predictions.sqlite ....... every prediction, every member vote, every outcome
@@ -198,16 +198,18 @@ src/nflpred/
   ingest.py       nflreadpy loaders + content-hash cache manifest
   evaluate.py     metrics, comparators, reliability diagrams, the 72% tripwire
   backtest.py     recency weights, the weekly fit, the walk-forward harness
-  predict.py      week_frame (incl. unplayed games) + the weekly CLI
+  predict/        week.py (week_frame, incl. unplayed games), run.py (refit +
+                  predict + log), __main__.py (the weekly CLI)
   predlog.py      the SQLite log: runs, predictions, member_predictions, outcomes
-  explain.py      FEATURE_GLOSSARY (30 entries), SHAP attribution, narratives
-  _provenance.py  library versions recorded in the manifest and the log
-  features/       pbp_agg.py, rolling.py, elo.py, qb.py, build.py
+  explain/        glossary.py (FEATURE_GLOSSARY, 30 entries), attribution.py (SHAP),
+                  narrative.py
+  _provenance.py  short_hash + library versions recorded in the manifest and the log
+  features/       pbp_agg.py, rolling.py, elo.py, qb.py, sets.py (feature sets), build.py
   modeling/       base.py (factory + calibration), ensemble.py, store.py
   api/            FastAPI: main.py, db.py, queries.py, analytics.py, routes/
 frontend/         Vite + React + Tailwind dashboard (5 pages, react-query)
 scripts/          phases/ (phase1-7 reports), tuning/ (tune_*), ops/ (seed_predlog.py)
-tests/            194 tests across 14 files + conftest.py
+tests/            202 tests across 15 files + conftest.py
 data/raw/         cached parquet + manifest.json (gitignored)
 data/processed/   team_game{,_gt}.parquet, game_features{,_gt}.parquet
 data/predictions.sqlite   the prediction log (gitignored)

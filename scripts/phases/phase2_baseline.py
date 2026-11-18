@@ -26,7 +26,8 @@ from nflpred.evaluate import (
     metrics_table,
     reliability_diagram,
 )
-from nflpred.features.build import BASELINE_FEATURES, to_training_arrays
+from nflpred.features.build import to_training_arrays
+from nflpred.features.sets import BASELINE_FEATURES
 from nflpred.modeling.base import split_frame
 
 from _shared import baseline_model, report_path, report_written, require_matrix

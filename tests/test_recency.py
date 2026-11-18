@@ -33,7 +33,8 @@ from nflpred.backtest import (
     recency_weights,
     with_recency,
 )
-from nflpred.features.build import CORE_FEATURES, to_training_arrays
+from nflpred.features.build import to_training_arrays
+from nflpred.features.sets import CORE_FEATURES
 from nflpred.modeling.base import (
     build_models,
     fit_calibrated,

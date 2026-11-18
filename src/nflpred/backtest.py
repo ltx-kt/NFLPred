@@ -45,7 +45,7 @@ from sklearn.base import ClassifierMixin
 from sklearn.linear_model import LogisticRegression
 
 from nflpred.config import CALIB_WINDOW_SEASONS, RECENCY_HALF_LIFE
-from nflpred.features.build import CORE_FEATURES
+from nflpred.features.sets import CORE_FEATURES
 from nflpred.modeling.base import (
     build_models,
     elo_platt_probability,
@@ -202,7 +202,7 @@ def fit_week(
 
     ``features`` is the 17-column ensemble tuple and is what the *stack* is
     fitted on. The five members are always fitted on
-    :data:`~nflpred.features.build.CORE_FEATURES`, because
+    :data:`~nflpred.features.sets.CORE_FEATURES`, because
     :data:`~nflpred.modeling.ensemble.BASE_COLUMNS` hard-codes the slice they read
     back - that pairing is the ensemble module's layout, not a choice here.
     """

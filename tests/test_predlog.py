@@ -3,7 +3,7 @@
 `predlog._frame` returns a zero-column frame when a query is empty, so any
 caller that filters its result on a named column crashes on a log that has
 predictions written but nothing settled yet. `predlog.rolling_brier` guards
-against this; `nflpred.predict._report` used to not, and died with a Polars
+against this; `nflpred.predict.__main__._report` used to not, and died with a Polars
 `ColumnNotFoundError` before it could print its "nothing settled" message.
 
 These tests build a log with SQL rather than through the live path, so they
@@ -17,8 +17,8 @@ import json
 import sqlite3
 from datetime import UTC, datetime
 
-from nflpred import predict
 from nflpred.api import queries
+from nflpred.predict import __main__ as predict_cli
 from nflpred.predlog import (
     connect,
     record_run,
@@ -185,9 +185,9 @@ def test_report_on_an_unsettled_log_prints_and_does_not_crash(
 ) -> None:
     path = tmp_path / "predictions.sqlite"
     _log_with_unsettled_predictions(path).close()
-    monkeypatch.setattr(predict, "connect", lambda: connect(path))
+    monkeypatch.setattr(predict_cli, "connect", lambda: connect(path))
 
-    predict._report(argparse.Namespace(config=None, window=4))
+    predict_cli._report(argparse.Namespace(config=None, window=4))
 
     out = capsys.readouterr().out
     assert "nothing settled for this configuration yet" in out

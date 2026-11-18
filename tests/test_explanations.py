@@ -23,7 +23,7 @@ the prose names the wrong team, fluently, forever.
 
 Runs against the real feature matrix and the real fitted models, like
 `tests/test_ensemble.py` - a synthetic frame would exercise none of the library
-shape differences that :func:`~nflpred.explain._normalise` exists to absorb.
+shape differences that :func:`~nflpred.explain.attribution._normalise` exists to absorb.
 """
 
 from __future__ import annotations
@@ -32,24 +32,20 @@ import numpy as np
 import polars as pl
 import pytest
 
-from nflpred.explain import (
-    _FORMATS,
+from nflpred.explain import explained_records
+from nflpred.explain.attribution import (
     ADDITIVITY_ATOL,
-    BANNED_PHRASES,
-    FEATURE_GLOSSARY,
-    NO_READ_EDGE,
     PROBABILITY,
     attribute_all,
     base_logit,
     build_explainers,
     combine,
-    describe,
-    explained_records,
     meta_terms,
     reference,
-    top_factors,
 )
-from nflpred.features.build import CORE_FEATURES, PHASE3_FEATURES
+from nflpred.explain.glossary import _FORMATS, FEATURE_GLOSSARY, describe
+from nflpred.explain.narrative import BANNED_PHRASES, NO_READ_EDGE, top_factors
+from nflpred.features.sets import CORE_FEATURES, PHASE3_FEATURES
 from nflpred.modeling.base import (
     fit_all,
     fit_elo_platt,
@@ -177,7 +173,7 @@ def test_a_flat_member_contributes_nothing_rather_than_dividing_by_zero(fitted, 
     either, so its contribution is zero. Constructed rather than sampled: no
     real validation row happens to hit it, which is exactly why it needs a test.
     """
-    from nflpred.explain import MARGIN, Attribution, secant_slopes
+    from nflpred.explain.attribution import MARGIN, Attribution, secant_slopes
 
     flat = Attribution(np.zeros((3, len(ENSEMBLE_FEATURES))), 0.3, MARGIN)
     slopes = secant_slopes({"flat": flat})

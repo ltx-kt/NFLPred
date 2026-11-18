@@ -66,95 +66,17 @@ from nflpred.features.elo import build_elo
 from nflpred.features.pbp_agg import OFFENSE_STATS
 from nflpred.features.qb import build_qb
 from nflpred.features.rolling import build_rolling, stem
-
-#: The Phase 2 baseline: seven rolling differentials and three situational
-#: columns. Deliberately absent - ``spread_line`` / ``total_line`` (Tier 3,
-#: measured separately), turnovers (Tier 3, barely persistent week to week),
-#: Elo and the QB composite (Phase 3). This tuple is the bar every later phase
-#: has to clear, so it does not change once measured. **Do not edit it.** A bar
-#: that moves is not a bar.
-BASELINE_FEATURES: Final[tuple[str, ...]] = (
-    "net_epa_r4_diff",
-    "net_epa_r8_diff",
-    "net_success_r8_diff",
-    "net_pass_epa_r8_diff",
-    "net_rush_epa_r8_diff",
-    "net_yards_per_play_r8_diff",
-    "net_explosive_r8_diff",
-    "rest_diff",
-    "div_game",
-    "is_dome",
-)
-
-#: Elo's contribution, as one column. ``elo_prob`` is deliberately not here:
-#: its logit is an exact linear function of ``elo_diff``, so for a logistic
-#: regression the two are the same feature. It rides the matrix as the
-#: standalone Elo estimator instead.
-ELO_FEATURES: Final[tuple[str, ...]] = ("elo_diff",)
-
-#: The Tier 1 QB composite. Form as a differential, the backup flags per side -
-#: a backup starting for the home team and one starting for the away team are
-#: not the same event, and differencing them would say they were.
-QB_FEATURES: Final[tuple[str, ...]] = (
-    "qb_epa_r4_diff",
-    "qb_epa_r8_diff",
-    "qb_cpoe_r8_diff",
-    "home_backup_qb_starting",
-    "away_backup_qb_starting",
-)
-
-#: The 16 columns that minimised validation log loss at Phase 3 - the baseline
-#: ten plus Elo plus the QB composite. Named here so Phase 4 can measure every
-#: estimator against it as well as against the curated 29.
-#:
-#: ``BASELINE_FEATURES`` is deliberately untouched by this: it stays the Phase 2
-#: bar, and a bar that moves is not a bar.
-CORE_FEATURES: Final[tuple[str, ...]] = (*BASELINE_FEATURES, *ELO_FEATURES, *QB_FEATURES)
-
-#: The Phase 3 headline: the curated set, measured against the Phase 2 bar.
-PHASE3_FEATURES: Final[tuple[str, ...]] = (
-    # --- team form, net differentials
-    "net_epa_r4_diff",
-    "net_epa_r8_diff",
-    "net_epa_std_diff",
-    "net_success_r8_diff",
-    "net_pass_epa_r8_diff",
-    "net_rush_epa_r8_diff",
-    "net_yards_per_play_r8_diff",
-    "net_explosive_r8_diff",
-    "net_points_r8_diff",
-    "net_third_down_r8_diff",
-    "net_sack_r8_diff",
-    # --- the same pass/rush signal, kept as offence and defence separately
-    "home_pass_epa_matchup_r8",
-    "away_pass_epa_matchup_r8",
-    "home_rush_epa_matchup_r8",
-    "away_rush_epa_matchup_r8",
-    # --- Tier 1
-    *ELO_FEATURES,
-    *QB_FEATURES,
-    # --- situational
-    "rest_diff",
-    "short_week_diff",
-    "off_bye_diff",
-    "div_game",
-    "is_dome",
-    "is_neutral_site",
-    "wind",
-    # --- Tier 3, shrunk by its measured reliability
-    "turnover_diff_shrunk",
-)
-
-#: Variants. Each differs from ``PHASE3_FEATURES`` in exactly one way, so the
-#: checkpoint table reads as a set of controlled comparisons rather than a
-#: collection of unrelated models.
-PHASE3_FEATURES_NO_TO: Final[tuple[str, ...]] = tuple(
-    f for f in PHASE3_FEATURES if f != "turnover_diff_shrunk"
-)
-PHASE3_FEATURES_MARKET: Final[tuple[str, ...]] = (
-    *PHASE3_FEATURES,
-    "spread_line",
-    "total_line",
+from nflpred.features.sets import (
+    BASELINE_FEATURES,
+    MATCHUP_STATS,
+    MATCHUP_WINDOW,
+    PHASE3_FEATURES,
+    SIDE_COLUMNS,
+    SIDE_DIFFS,
+    matchup_feature_names,
+    net_feature_names,
+    net_std_feature_names,
+    wide_features,
 )
 
 #: Situational columns lifted straight from ``schedules``.
@@ -171,6 +93,10 @@ _SITUATIONAL: Final[tuple[str, ...]] = (
     "home_moneyline",
     "away_moneyline",
 )
+
+#: Per-team identifiers carried through the split. Not features - they are what
+#: makes a Phase 6 explanation able to name the quarterback it is talking about.
+_SIDE_LABELS: Final[tuple[str, ...]] = ("projected_qb",)
 
 #: ``roof`` values that mean the game was played indoors. ``open`` is a
 #: retractable roof left open, i.e. outdoors on the day.
@@ -207,43 +133,6 @@ SHORT_WEEK_REST: Final[int] = 4
 #: Rest days at or above this mean the team is coming off a bye.
 OFF_BYE_REST: Final[int] = 13
 
-#: Statistics kept as separate offence/defence halves rather than only as a net.
-_MATCHUP_STATS: Final[tuple[str, ...]] = ("pass_epa", "rush_epa")
-
-#: The window the matchup columns use. One window, not both: the point is the
-#: offence/defence split, and duplicating it at r4 would double four columns to
-#: say the same thing twice.
-_MATCHUP_WINDOW: Final[int] = 8
-
-#: Per-team columns carried through the home/away split with a side prefix.
-_SIDE_COLUMNS: Final[tuple[str, ...]] = (
-    "elo_pre",
-    "qb_epa_r4",
-    "qb_epa_r8",
-    "qb_cpoe_r4",
-    "qb_cpoe_r8",
-    "qb_prior_starts",
-    "backup_qb_starting",
-    "qb_form_unknown",
-    *[f"off_{s}_r{_MATCHUP_WINDOW}" for s in _MATCHUP_STATS],
-    *[f"def_{s}_r{_MATCHUP_WINDOW}" for s in _MATCHUP_STATS],
-)
-
-#: Per-team identifiers carried through the split. Not features - they are what
-#: makes a Phase 6 explanation able to name the quarterback it is talking about.
-_SIDE_LABELS: Final[tuple[str, ...]] = ("projected_qb",)
-
-#: Side columns that also get a ``home − away`` differential, mapped to the name
-#: that differential takes. ``elo_pre`` differences to plain ``elo_diff``, which
-#: is what the rest of the project calls it.
-_SIDE_DIFFS: Final[dict[str, str]] = {
-    "elo_pre": "elo_diff",
-    "qb_epa_r4": "qb_epa_r4_diff",
-    "qb_epa_r8": "qb_epa_r8_diff",
-    "qb_cpoe_r4": "qb_cpoe_r4_diff",
-    "qb_cpoe_r8": "qb_cpoe_r8_diff",
-}
-
 
 #: Week numbers never exceed this, so ``season * _WEEK_BASE + week`` is a
 #: monotone encoding of the calendar and its dense rank is a clean index.
@@ -272,67 +161,6 @@ def league_week_index() -> pl.Expr:
     weeks a season does not have.
     """
     return (pl.col("season") * _WEEK_BASE + pl.col("week")).rank("dense").cast(pl.Int32)
-
-
-def net_feature_names(
-    windows: Sequence[int] = ROLLING_WINDOWS,
-    stats: Sequence[str] = OFFENSE_STATS,
-) -> tuple[str, ...]:
-    """Names of the net differential columns, in emission order."""
-    return tuple(f"net_{stem(s)}_r{w}_diff" for s in stats for w in windows)
-
-
-def net_std_feature_names(stats: Sequence[str] = STD_WINDOW_STATS) -> tuple[str, ...]:
-    """Names of the season-to-date net differential columns."""
-    return tuple(f"net_{stem(s)}_std_diff" for s in stats)
-
-
-def matchup_feature_names() -> tuple[str, ...]:
-    """Names of the split offence-against-defence columns."""
-    return tuple(
-        f"{side}_{s}_matchup_r{_MATCHUP_WINDOW}"
-        for side in ("home", "away")
-        for s in _MATCHUP_STATS
-    )
-
-
-def wide_features(
-    windows: Sequence[int] = ROLLING_WINDOWS,
-    stats: Sequence[str] = OFFENSE_STATS,
-    std_stats: Sequence[str] = STD_WINDOW_STATS,
-) -> tuple[str, ...]:
-    """Every legal feature the matrix carries, market columns excluded.
-
-    The kitchen sink, as a control. If ~100 columns beat the curated ~29 by
-    enough to matter, the curation was wrong; if they do not, the curation is
-    doing its job and the extra columns were noise. Either answer is worth one
-    row of the checkpoint table.
-    """
-    return (
-        *net_feature_names(windows, stats),
-        *net_std_feature_names(std_stats),
-        *matchup_feature_names(),
-        *[f"{side}_{c}" for side in ("home", "away") for c in _SIDE_COLUMNS],
-        *_SIDE_DIFFS.values(),
-        "rest_diff",
-        "home_rest",
-        "away_rest",
-        "home_short_week",
-        "away_short_week",
-        "short_week_diff",
-        "home_off_bye",
-        "away_off_bye",
-        "off_bye_diff",
-        "div_game",
-        "is_dome",
-        "is_neutral_site",
-        "is_postseason",
-        "wind",
-        "weather_unknown",
-        "std_is_fallback",
-        "cpoe_unknown",
-        "turnover_diff_shrunk",
-    )
 
 
 def turnover_reliability(
@@ -455,12 +283,12 @@ def build_features(
         away_team=pl.col("opponent"),
         home_win=pl.col("won"),
         elo_prob=pl.col("elo_prob"),
-        **{f"home_{c}": pl.col(c) for c in [*window_cols, *_SIDE_COLUMNS, *_SIDE_LABELS]},
+        **{f"home_{c}": pl.col(c) for c in [*window_cols, *SIDE_COLUMNS, *_SIDE_LABELS]},
         **{c: pl.col(c) for c in net_cols},
     )
     away = teams.filter(pl.col("is_home") == 0).select(
         "game_id",
-        **{f"away_{c}": pl.col(c) for c in [*window_cols, *_SIDE_COLUMNS, *_SIDE_LABELS]},
+        **{f"away_{c}": pl.col(c) for c in [*window_cols, *SIDE_COLUMNS, *_SIDE_LABELS]},
         **{f"{c}_away": pl.col(c) for c in net_cols},
     )
 
@@ -474,17 +302,17 @@ def build_features(
             [(pl.col(c) - pl.col(f"{c}_away")).alias(f"{c}_diff") for c in net_cols]
             + [
                 (pl.col(f"home_{c}") - pl.col(f"away_{c}")).alias(name)
-                for c, name in _SIDE_DIFFS.items()
+                for c, name in SIDE_DIFFS.items()
             ]
             # The offence/defence split: each side's offence against the other
             # side's defence, kept as its own column.
             + [
                 (
-                    pl.col(f"{side}_off_{s}_r{_MATCHUP_WINDOW}")
-                    - pl.col(f"{other}_def_{s}_r{_MATCHUP_WINDOW}")
-                ).alias(f"{side}_{s}_matchup_r{_MATCHUP_WINDOW}")
+                    pl.col(f"{side}_off_{s}_r{MATCHUP_WINDOW}")
+                    - pl.col(f"{other}_def_{s}_r{MATCHUP_WINDOW}")
+                ).alias(f"{side}_{s}_matchup_r{MATCHUP_WINDOW}")
                 for side, other in (("home", "away"), ("away", "home"))
-                for s in _MATCHUP_STATS
+                for s in MATCHUP_STATS
             ]
         )
         .with_columns(
@@ -539,7 +367,7 @@ def build_features(
     # what re-verifies it.
     games = games.with_columns(
         turnover_diff_shrunk=(
-            pl.col(f"net_turnovers_r{_MATCHUP_WINDOW}_diff") * TURNOVER_RELIABILITY
+            pl.col(f"net_turnovers_r{MATCHUP_WINDOW}_diff") * TURNOVER_RELIABILITY
         )
     )
 
@@ -575,9 +403,9 @@ def build_features(
         *net_std_feature_names(std_stats),
         *matchup_feature_names(),
         "turnover_diff_shrunk",
-        *[f"home_{c}" for c in _SIDE_COLUMNS],
-        *[f"away_{c}" for c in _SIDE_COLUMNS],
-        *_SIDE_DIFFS.values(),
+        *[f"home_{c}" for c in SIDE_COLUMNS],
+        *[f"away_{c}" for c in SIDE_COLUMNS],
+        *SIDE_DIFFS.values(),
         "elo_prob",
         *[f"{side}_{c}" for side in ("home", "away") for c in _SIDE_LABELS],
         "rest_diff",

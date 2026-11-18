@@ -17,7 +17,7 @@ import polars as pl
 import pytest
 
 from nflpred.config import FEATURE_MATRIX_GT_PATH
-from nflpred.features.build import CORE_FEATURES
+from nflpred.features.sets import CORE_FEATURES
 from nflpred.modeling.base import fit_all, split_frame
 
 

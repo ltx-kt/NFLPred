@@ -39,7 +39,7 @@ from nflpred.backtest import (
     with_recency,
 )
 from nflpred.config import CALIB_WINDOW_SEASONS
-from nflpred.features.build import CORE_FEATURES
+from nflpred.features.sets import CORE_FEATURES
 from nflpred.modeling.ensemble import ENSEMBLE_FEATURES
 
 pytestmark = pytest.mark.data

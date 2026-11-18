@@ -28,7 +28,7 @@ from nflpred.config import LIVE_SEASON, SCHEDULES_PATH
 from nflpred.features.build import build_features
 from nflpred.ingest import read_pbp, read_schedules
 from nflpred.modeling.ensemble import ENSEMBLE_FEATURES
-from nflpred.predict import _synthesized_rows, team_game_table, week_frame
+from nflpred.predict.week import _synthesized_rows, team_game_table, week_frame
 
 pytestmark = pytest.mark.data
 

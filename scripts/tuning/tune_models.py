@@ -37,11 +37,8 @@ from sklearn.model_selection import TimeSeriesSplit
 
 from nflpred.config import FEATURE_MATRIX_PATH, TRAIN_SEASONS
 from nflpred.evaluate import log_loss
-from nflpred.features.build import (
-    CORE_FEATURES,
-    PHASE3_FEATURES,
-    to_training_arrays,
-)
+from nflpred.features.build import to_training_arrays
+from nflpred.features.sets import CORE_FEATURES, PHASE3_FEATURES
 from nflpred.modeling.base import BUILDERS, fit_weighted, split_frame
 
 pl.Config.set_tbl_rows(30)

@@ -28,7 +28,8 @@ import numpy as np
 import polars as pl
 import pytest
 
-from nflpred.features.build import CORE_FEATURES, to_training_arrays
+from nflpred.features.build import to_training_arrays
+from nflpred.features.sets import CORE_FEATURES
 from nflpred.modeling.base import (
     elo_probability,
     fit_all,

@@ -27,7 +27,8 @@ import polars as pl
 import pytest
 
 from nflpred.evaluate import ACCURACY_CEILING, expand_ties, halt_if_suspicious
-from nflpred.features.build import CORE_FEATURES, to_training_arrays
+from nflpred.features.build import to_training_arrays
+from nflpred.features.sets import CORE_FEATURES
 from nflpred.modeling.base import (
     BUILDERS,
     build_models,

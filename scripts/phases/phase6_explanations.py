@@ -44,21 +44,21 @@ import polars as pl
 
 from nflpred.config import FEATURE_MATRIX_GT_PATH, PICK_THRESHOLD, TIE, VAL_SEASONS
 from nflpred.evaluate import market_probability
-from nflpred.explain import (
+from nflpred.explain import explained_records
+from nflpred.explain.attribution import (
     ADDITIVITY_ATOL,
-    FEATURE_GLOSSARY,
-    NO_READ_EDGE,
     Attribution,
     Explainer,
     attribute_all,
     base_logit,
     build_explainers,
     combine,
-    explained_records,
     meta_terms,
     reference,
 )
-from nflpred.features.build import CORE_FEATURES
+from nflpred.explain.glossary import FEATURE_GLOSSARY
+from nflpred.explain.narrative import NO_READ_EDGE
+from nflpred.features.sets import CORE_FEATURES
 from nflpred.modeling.base import (
     fit_all,
     fit_elo_platt,

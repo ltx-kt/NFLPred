@@ -40,14 +40,14 @@ from nflpred.config import (
     ROLLING_WINDOWS,
     TEAM_GAME_PATH,
 )
-from nflpred.features.build import (
+from nflpred.features.build import build_features
+from nflpred.features.rolling import build_rolling
+from nflpred.features.sets import (
     BASELINE_FEATURES,
     PHASE3_FEATURES,
-    build_features,
     net_feature_names,
     wide_features,
 )
-from nflpred.features.rolling import build_rolling
 from nflpred.ingest import read_pbp, read_schedules
 
 pytestmark = pytest.mark.data

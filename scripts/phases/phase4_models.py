@@ -46,11 +46,7 @@ from nflpred.evaluate import (
     metrics_table,
     reliability_diagram,
 )
-from nflpred.features.build import (
-    CORE_FEATURES,
-    PHASE3_FEATURES,
-    wide_features,
-)
+from nflpred.features.sets import CORE_FEATURES, PHASE3_FEATURES, wide_features
 from nflpred.modeling.base import (
     build_models,
     elo_platt_probability,

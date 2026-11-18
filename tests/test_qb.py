@@ -234,7 +234,7 @@ def test_unknown_form_is_structurally_dead_in_the_matrix_era(matrix_era: pl.Data
     and Houston's 2002 expansion - which is outside the matrix by D-2.
 
     It joins the two flags D-24 already found structurally dead. The driver in
-    `nflpred.explain.confidence_drivers` is **kept** rather than removed, for D-24's
+    `nflpred.explain.narrative.confidence_drivers` is **kept** rather than removed, for D-24's
     stated reason: it fires if that ever stops being true.
     """
     assert matrix_era["qb_form_unknown"].sum() == 0
