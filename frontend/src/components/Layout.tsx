@@ -1,4 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { usePerformance } from "../api/client";
+import { pctRange } from "../lib/format";
 import { ColorblindToggle } from "./ColorblindToggle";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -10,6 +12,7 @@ const TABS = [
 ];
 
 export function Layout() {
+  const band = usePerformance().data?.market_band;
   return (
     <div className="min-h-full">
       <header className="border-b border-hairline bg-surface/80 backdrop-blur">
@@ -48,7 +51,7 @@ export function Layout() {
 
       <footer className="mx-auto max-w-5xl px-4 py-8 text-xs text-ink-muted">
         Read-only view over the prediction log. The model refits weekly and is never
-        loaded from disk. Vegas hits ~66-68% straight up.
+        loaded from disk.{band && ` Vegas hits ~${pctRange(band)} straight up.`}
       </footer>
     </div>
   );

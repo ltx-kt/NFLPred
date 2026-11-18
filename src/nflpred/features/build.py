@@ -56,6 +56,7 @@ from nflpred.config import (
     ROLLING_WINDOWS,
     STD_WINDOW_STATS,
     TEAM_GAME_PATH,
+    TIE,
     TRAIN_SEASONS,
     TURNOVER_RELIABILITY,
     season_split,
@@ -508,7 +509,7 @@ def build_features(
             is_neutral_site=pl.col("is_neutral_site").cast(pl.Int8),
             # A tie is 0.5 in `home_win`; the flag keeps it visible rather than
             # letting it read as a rounding artefact (D-4).
-            is_tie=(pl.col("home_win") == 0.5).cast(pl.Int8),
+            is_tie=(pl.col("home_win") == TIE).cast(pl.Int8),
             split=pl.col("season").map_elements(season_split, return_dtype=pl.String),
         )
         .with_columns(

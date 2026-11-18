@@ -18,7 +18,7 @@ Run::
 
     uv run python -m nflpred.features.build                  # if the matrix is stale
     uv run python -m nflpred.features.build --garbage-time
-    uv run python scripts/phase3_features.py
+    uv run python scripts/phases/phase3_features.py
 """
 
 from __future__ import annotations

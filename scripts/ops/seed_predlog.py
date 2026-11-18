@@ -25,9 +25,9 @@ Two things to know about what this writes:
 
 Run::
 
-    uv run python scripts/seed_predlog.py                 # 2022-2025, all weeks
-    uv run python scripts/seed_predlog.py --seasons 2024 2025
-    uv run python scripts/seed_predlog.py --limit 1 --no-log   # time one week
+    uv run python scripts/ops/seed_predlog.py                 # the test split, all weeks
+    uv run python scripts/ops/seed_predlog.py --seasons 2024 2025
+    uv run python scripts/ops/seed_predlog.py --limit 1 --no-log   # time one week
 """
 
 from __future__ import annotations
@@ -38,6 +38,7 @@ import time
 
 import polars as pl
 
+from nflpred.config import TEST_SEASONS
 from nflpred.ingest import read_pbp, read_schedules
 from nflpred.predict import (
     connect,
@@ -81,8 +82,8 @@ def main() -> None:
         type=int,
         nargs=2,
         metavar=("FIRST", "LAST"),
-        default=(2022, 2025),
-        help="inclusive season range to replay (default: 2022 2025)",
+        default=TEST_SEASONS,
+        help=f"inclusive season range to replay (default: {TEST_SEASONS[0]} {TEST_SEASONS[1]})",
     )
     parser.add_argument(
         "--limit",

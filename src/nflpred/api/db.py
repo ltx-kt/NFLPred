@@ -16,7 +16,7 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException
 
-from nflpred.config import PREDICTIONS_DB
+from nflpred.config import LIVE_SEASON, PREDICTIONS_DB
 
 
 def _uri(path: Path) -> str:
@@ -28,7 +28,7 @@ def open_readonly(path: Path = PREDICTIONS_DB) -> sqlite3.Connection:
     """Open the log read-only, or 503 if it has not been created yet.
 
     The log is written by ``python -m nflpred.predict`` and seeded by
-    ``scripts/seed_predlog.py``; until one of those has run there is nothing to
+    ``scripts/ops/seed_predlog.py``; until one of those has run there is nothing to
     serve, and that is an operational state rather than a bug, so it is a 503
     with an instruction rather than a 500.
     """
@@ -37,8 +37,8 @@ def open_readonly(path: Path = PREDICTIONS_DB) -> sqlite3.Connection:
             status_code=503,
             detail=(
                 f"prediction log {path.name} does not exist yet - run "
-                f"`uv run python -m nflpred.predict --season 2026 --week 1` or "
-                f"`uv run python scripts/seed_predlog.py` to create it."
+                f"`uv run python -m nflpred.predict --season {LIVE_SEASON} --week 1` or "
+                f"`uv run python scripts/ops/seed_predlog.py` to create it."
             ),
         )
     # `check_same_thread=False`: Starlette may run a sync dependency and its sync

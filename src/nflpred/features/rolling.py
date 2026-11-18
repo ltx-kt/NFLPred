@@ -259,18 +259,19 @@ def build_rolling(
 
 def main() -> None:
     """Build the rolling table from the cached team-game table and describe it."""
-    from nflpred.config import TEAM_GAME_PATH
+    from nflpred.config import MATRIX_START_SEASON, TEAM_GAME_PATH
 
     rolling = build_rolling(pl.read_parquet(TEAM_GAME_PATH))
-    first = rolling.filter(pl.col("season") >= 2006)
+    first = rolling.filter(pl.col("season") >= MATRIX_START_SEASON)
+    era = f"{MATRIX_START_SEASON}+"
 
     print(f"rolling: {rolling.height:,} rows x {rolling.width} cols")
-    print(f"  matrix seasons (2006+): {first.height:,} rows")
-    print(f"  null off_epa_r8 in 2006+: {first['off_epa_r8'].null_count()}")
-    print(f"  min games_in_window_r8 in 2006+: {first['games_in_window_r8'].min()}")
-    print(f"  null off_epa_std in 2006+: {first['off_epa_std'].null_count()}")
+    print(f"  matrix seasons ({era}): {first.height:,} rows")
+    print(f"  null off_epa_r8 in {era}: {first['off_epa_r8'].null_count()}")
+    print(f"  min games_in_window_r8 in {era}: {first['games_in_window_r8'].min()}")
+    print(f"  null off_epa_std in {era}: {first['off_epa_std'].null_count()}")
     print(
-        f"  std_is_fallback in 2006+: {first['std_is_fallback'].sum():,} rows "
+        f"  std_is_fallback in {era}: {first['std_is_fallback'].sum():,} rows "
         f"({first['std_is_fallback'].mean():.1%})"
     )
 

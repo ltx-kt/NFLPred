@@ -48,7 +48,7 @@ exactly::
 
 What remains an approximation - and is labelled as one in every record - is the
 *allocation within a member*: a constant secant slope spreads the sigmoid's
-curvature evenly across that member's features. `scripts/phase6_explanations.py`
+curvature evenly across that member's features. `scripts/phases/phase6_explanations.py`
 prints the reconciliation residual so the claim is a number, not a disclaimer.
 
 **The one merge.** ``elo_diff`` and ``elo_prob`` are the same information under
@@ -62,7 +62,7 @@ additivity above exactly; the split stays visible in the per-model layer the
 spec requires underneath. See D-25.
 
 **Which member probability the slope is taken at.** The headline stack holds
-*raw* members (`scripts/phase5_ensemble.py` builds it from `inner_estimator`),
+*raw* members (`scripts/phases/phase5_ensemble.py` builds it from `inner_estimator`),
 so its meta-learner consumed uncalibrated probabilities. The per-game record
 reports the *calibrated* votes instead, and D-18 puts ~0.015 between them. Every
 slope here is therefore computed from the attribution's own base value rather
@@ -86,6 +86,7 @@ from nflpred.modeling.ensemble import (
     ELO_MEMBER,
     ENSEMBLE_FEATURES,
     MEMBER_ORDER,
+    edge,
     meta_coefficients,
 )
 
@@ -716,7 +717,7 @@ def confidence_drivers(
     The third fires often enough to carry the driver on its own: 269 of 821
     validation games have a different-than-usual starter on one side.
     """
-    edge = abs(probability - 0.5)
+    distance = edge(probability)
     pick = record["ensemble"]["pick"]
     # Quoted for the team actually picked, not for the home team. `probability`
     # is P(home win) everywhere in this project, so on an away pick the two are
@@ -724,9 +725,9 @@ def confidence_drivers(
     # contradiction.
     for_pick = probability if pick == record["home_team"] else 1.0 - probability
 
-    if edge < NO_READ_EDGE:
+    if distance < NO_READ_EDGE:
         signal = f"no read - {probability:.1%} is within {NO_READ_EDGE:.2f} of a coin flip"
-    elif edge < CONFIDENCE_BANDS[2][0]:
+    elif distance < CONFIDENCE_BANDS[2][0]:
         # D-21: the two middle bands could not be told apart on validation, so
         # they are presented as one undifferentiated read. The bands themselves
         # are untouched - the collapse is a narrative choice, not a refit.
@@ -838,7 +839,7 @@ def narrative(
     home, away = record["home_team"], record["away_team"]
     other = away if pick == home else home
 
-    if abs(probability - 0.5) < NO_READ_EDGE:
+    if edge(probability) < NO_READ_EDGE:
         return (
             f"The model has no meaningful read on {away} at {home}: it lands at "
             f"{probability:.1%} for {home}, inside {NO_READ_EDGE:.2f} of a coin flip. "
@@ -872,7 +873,7 @@ def narrative(
     if not factors_for and not factors_against:
         parts.append("No single input clears the threshold to be named a factor.")
 
-    edge_word = "clear" if abs(probability - 0.5) >= CONFIDENCE_BANDS[2][0] else "thin"
+    edge_word = "clear" if edge(probability) >= CONFIDENCE_BANDS[2][0] else "thin"
     parts.append(
         f"Confidence is {record['ensemble']['confidence']}: the edge is {edge_word}, and "
         f"{agreed} of {len(votes)} members agree (member probabilities spread {spread:.3f})."
@@ -934,7 +935,7 @@ def explain_game(
     """
     home, away = record["home_team"], record["away_team"]
 
-    no_read = abs(probability - 0.5) < NO_READ_EDGE
+    no_read = edge(probability) < NO_READ_EDGE
     pick_is_home = record["ensemble"]["pick"] == home
     factors_for, factors_against = (
         ([], [])

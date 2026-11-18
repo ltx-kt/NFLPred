@@ -29,7 +29,7 @@ Everything refits from the factory (D-17); nothing is loaded.
 
 Run::
 
-    uv run python scripts/phase6_explanations.py
+    uv run python scripts/phases/phase6_explanations.py
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ from pathlib import Path
 import numpy as np
 import polars as pl
 
-from nflpred.config import FEATURE_MATRIX_GT_PATH, VAL_SEASONS
+from nflpred.config import FEATURE_MATRIX_GT_PATH, PICK_THRESHOLD, TIE, VAL_SEASONS
 from nflpred.evaluate import market_probability
 from nflpred.explain import (
     ADDITIVITY_ATOL,
@@ -71,6 +71,7 @@ from nflpred.modeling.ensemble import (
     ENSEMBLE_FEATURES,
     MEMBER_ORDER,
     build_members,
+    edge,
     predict_records,
     prefit_stack,
 )
@@ -91,7 +92,7 @@ def main() -> None:
 
     started = time.perf_counter()
 
-    # The headline ensemble, rebuilt exactly as `scripts/phase5_ensemble.py`
+    # The headline ensemble, rebuilt exactly as `scripts/phases/phase5_ensemble.py`
     # builds it: stack A, whose members are the **raw** inner estimators. Those
     # are the objects the meta-learner consumed, and so the objects to explain.
     models = fit_all(matrix, CORE_FEATURES)
@@ -277,21 +278,21 @@ def _hand_check(
     would let a flattering sample in, so each is the argmax of a stated rule.
     """
     y = val["home_win"].to_numpy()
-    edge = np.abs(probability - 0.5)
-    correct = (probability >= 0.5) == (y >= 0.5)
+    distance = edge(probability)
+    correct = (probability >= PICK_THRESHOLD) == (y >= PICK_THRESHOLD)
     agreement = np.array([int(r["agreement"].split("/")[0]) for r in explained])
     backup = (val["home_backup_qb_starting"].to_numpy() == 1) | (
         val["away_backup_qb_starting"].to_numpy() == 1
     )
 
     picks = {
-        "most confident CORRECT pick": np.argmax(np.where(correct, edge, -1.0)),
+        "most confident CORRECT pick": np.argmax(np.where(correct, distance, -1.0)),
         "most confident WRONG pick - the one the spec cares about": np.argmax(
-            np.where(~correct, edge, -1.0)
+            np.where(~correct, distance, -1.0)
         ),
-        "a 5/6 member disagreement": np.argmax(np.where(agreement == 5, edge, -1.0)),
-        "a sub-0.03 no-read game": np.argmin(edge),
-        "a game with a non-usual starting quarterback": np.argmax(np.where(backup, edge, -1.0)),
+        "a 5/6 member disagreement": np.argmax(np.where(agreement == 5, distance, -1.0)),
+        "a sub-0.03 no-read game": np.argmin(distance),
+        "a game with a non-usual starting quarterback": np.argmax(np.where(backup, distance, -1.0)),
     }
 
     print("\n" + "=" * 78)
@@ -300,7 +301,7 @@ def _hand_check(
     for label, position in picks.items():
         index = int(position)
         record = explained[index]
-        outcome = "tie" if y[index] == 0.5 else ("hit" if correct[index] else "MISS")
+        outcome = "tie" if y[index] == TIE else ("hit" if correct[index] else "MISS")
         print(f"\n--- {label}  [{outcome}, actual home_win={y[index]:g}] ---")
         print(json.dumps(record, indent=2))
 
@@ -312,7 +313,7 @@ def _no_read_share(probability: np.ndarray) -> None:
     constraint is not wired up; roughly one game a week should refuse to explain
     itself.
     """
-    inside = np.abs(probability - 0.5) < NO_READ_EDGE
+    inside = edge(probability) < NO_READ_EDGE
     print(
         f"\nno-read games: {inside.sum()} of {len(probability)} "
         f"({inside.mean():.1%}) fall within {NO_READ_EDGE:.2f} of a coin flip and "

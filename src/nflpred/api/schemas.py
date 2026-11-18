@@ -123,6 +123,18 @@ class SeasonMetric(BaseModel):
     metrics: list[MetricRow]
 
 
+class MarketSide(BaseModel):
+    n: int
+    hit_rate: float | None  # null when no settled game falls on this side
+
+
+class MarketAgreement(BaseModel):
+    """The ensemble's hit rate when its pick sides with the market, and against it."""
+
+    with_market: MarketSide
+    against_market: MarketSide
+
+
 class Performance(BaseModel):
     """Ensemble vs comparators over settled games, overall and per season-week."""
 
@@ -132,6 +144,7 @@ class Performance(BaseModel):
     by_week: list[SeasonMetric]
     accuracy_ceiling: float  # the 72% leakage tripwire, for the chart annotation
     market_band: list[float]  # ~[0.66, 0.68] straight-up, for the chart annotation
+    market_agreement: MarketAgreement
 
 
 class CalibrationPoint(BaseModel):

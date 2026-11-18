@@ -12,7 +12,7 @@ which does not improve on it can be called out rather than tuned around.
 Run::
 
     uv run python -m nflpred.features.build          # if the matrix is stale
-    uv run python scripts/phase2_baseline.py
+    uv run python scripts/phases/phase2_baseline.py
 """
 
 from __future__ import annotations

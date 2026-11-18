@@ -21,7 +21,7 @@ different rating system than the one Phase 3 uses.
 
 Writes nothing. Run::
 
-    uv run python scripts/tune_elo.py
+    uv run python scripts/tuning/tune_elo.py
 """
 
 from __future__ import annotations

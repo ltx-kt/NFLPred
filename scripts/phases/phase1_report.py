@@ -4,7 +4,7 @@ Prints what the spec asks for at the end of the data phase - shape, date range,
 null counts - plus the reconciliation checks that decide whether the team-game
 table can be trusted as the substrate for everything downstream.
 
-    python scripts/phase1_report.py
+    python scripts/phases/phase1_report.py
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ import polars as pl
 
 from nflpred.config import (
     DATA_RAW,
+    LAST_COMPLETED_SEASON,
     MATRIX_START_SEASON,
     TEAM_GAME_PATH,
     TEST_SEASONS,
@@ -79,7 +80,7 @@ def main() -> None:
     no_result = schedules.filter(pl.col("home_score").is_null() | pl.col("away_score").is_null())
     print(f"  {no_result.height} scheduled games have no final score")
     print(no_result.group_by("season").len().sort("season"))
-    cancelled = no_result.filter(pl.col("season") <= 2025)
+    cancelled = no_result.filter(pl.col("season") <= LAST_COMPLETED_SEASON)
     if cancelled.height:
         print("\n  in a completed season (cancelled/unplayed):")
         print(cancelled.select("game_id", "season", "week", "away_team", "home_team"))
@@ -193,7 +194,9 @@ def main() -> None:
     sb_2016 = one(schedules.filter((pl.col("season") == 2016) & (pl.col("game_type") == "SB")))
     dome_game = one(schedules.filter((pl.col("season") == 2024) & (pl.col("roof") == "dome")))
     recent = one(
-        schedules.filter((pl.col("season") == 2025) & pl.col("home_score").is_not_null()),
+        schedules.filter(
+            (pl.col("season") == LAST_COMPLETED_SEASON) & pl.col("home_score").is_not_null()
+        ),
         newest=True,
     )
 

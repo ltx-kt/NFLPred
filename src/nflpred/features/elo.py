@@ -18,7 +18,7 @@ the time the feature matrix opens in 2006, every rating has seven seasons of
 burn-in behind it and none of them is still sitting at its initial value.
 
 Hyperparameters are frozen constants in :mod:`nflpred.config`, chosen by
-``scripts/tune_elo.py`` on the training seasons alone (D-11). This module does
+``scripts/tuning/tune_elo.py`` on the training seasons alone (D-11). This module does
 not search them.
 """
 
@@ -103,7 +103,7 @@ def _run(
     ratings and simply do not trigger an update. That is what lets the live 2026
     path read an Elo feature off an unplayed game.
 
-    ``k``, ``hfa`` and ``mov`` are the tuner's knobs (`scripts/tune_elo.py`);
+    ``k``, ``hfa`` and ``mov`` are the tuner's knobs (`scripts/tuning/tune_elo.py`);
     the initial rating, the expansion start, the season regression and the first
     season are fixed in :mod:`nflpred.config` and read straight from there.
     """

@@ -242,19 +242,20 @@ def build_qb(
 
 def main() -> None:
     """QB composite sanity dump."""
-    from nflpred.config import TEAM_GAME_PATH
+    from nflpred.config import MATRIX_START_SEASON, TEAM_GAME_PATH
     from nflpred.ingest import read_pbp
 
     team_game = pl.read_parquet(TEAM_GAME_PATH)
     qb = build_qb(read_pbp(), team_game)
-    matrix_era = qb.filter(pl.col("season") >= 2006)
+    matrix_era = qb.filter(pl.col("season") >= MATRIX_START_SEASON)
+    era = f"{MATRIX_START_SEASON}+"
 
     print(f"qb: {qb.height:,} rows x {qb.width} cols")
-    print(f"  matrix seasons (2006+): {matrix_era.height:,} rows")
+    print(f"  matrix seasons ({era}): {matrix_era.height:,} rows")
     print(f"  distinct projected starters: {qb['projected_qb'].n_unique():,}")
     for flag in ("backup_qb_starting", "qb_form_unknown"):
-        print(f"  {flag} in 2006+: {matrix_era[flag].sum():,} ({matrix_era[flag].mean():.1%})")
-    print(f"  null qb_epa_r8 in 2006+: {matrix_era['qb_epa_r8'].null_count()}")
+        print(f"  {flag} in {era}: {matrix_era[flag].sum():,} ({matrix_era[flag].mean():.1%})")
+    print(f"  null qb_epa_r8 in {era}: {matrix_era['qb_epa_r8'].null_count()}")
 
 
 if __name__ == "__main__":

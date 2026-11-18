@@ -228,7 +228,7 @@ STD_WINDOW_STATS: Final[tuple[str, ...]] = (
 
 # ---------------------------------------------------------------------- elo
 #
-# Frozen from `scripts/tune_elo.py`, which grids K x HFA x MOV by log loss of
+# Frozen from `scripts/tuning/tune_elo.py`, which grids K x HFA x MOV by log loss of
 # the Elo-only probability on the **training seasons only** (2006-2015). The
 # grid is not re-searched: validation must never see a tuning decision (D-11).
 #
@@ -290,6 +290,14 @@ ELO_SEASON_REGRESSION: Final[float] = 1.0 / 3.0
 #: for D-9 to be a controlled comparison, which a per-table factor would break.
 TURNOVER_RELIABILITY: Final[float] = 0.1328
 
+#: The D-4 outcome encoding for a tied game: half a win for each side. The
+#: target is a float in {0, TIE, 1} everywhere - the matrix, the log, the API.
+TIE: Final[float] = 0.5
+
+#: A home win probability at or above this picks the home team. Shares a value
+#: with :data:`TIE` and nothing else: one is a decision rule, the other a label.
+PICK_THRESHOLD: Final[float] = 0.5
+
 #: Playoff round codes in `game_type`. Anything not "REG" is postseason.
 POSTSEASON_TYPES: Final[frozenset[str]] = frozenset({"WC", "DIV", "CON", "SB"})
 
@@ -314,7 +322,7 @@ TEAM_ALIASES: Final[dict[str, str]] = {
 
 # ------------------------------------------------------------------- models
 #
-# Frozen from `scripts/tune_models.py` - the D-11 pattern extended to the model
+# Frozen from `scripts/tuning/tune_models.py` - the D-11 pattern extended to the model
 # stack (D-16). Every grid is scored by log loss over a five-fold
 # `TimeSeriesSplit` **inside the training seasons only** (2006-2015). Neither
 # the calibration split nor validation sees a hyperparameter decision, so a
@@ -338,6 +346,10 @@ RANDOM_STATE: Final[int] = 1999
 #: accumulation *order*, and the forest is the one estimator here that sums into
 #: a shared buffer from workers.
 N_JOBS: Final[int] = 4
+
+#: Iteration cap for every `LogisticRegression` (members, meta-learner, Platt
+#: scaler). Generous enough that none of them stops short of convergence.
+LOGREG_MAX_ITER: Final[int] = 1000
 
 # What the grids actually showed, before the numbers: **every estimator wants
 # less capacity than its defaults give it.** A first pass gridded the three
@@ -443,7 +455,7 @@ MODEL_PARAM_OVERRIDES: Final[dict[int, dict[str, dict[str, object]]]] = {
 
 # ------------------------------------------------------------------ recency
 #
-# Frozen from `scripts/tune_recency.py` - the D-11 / D-16 pattern applied to the
+# Frozen from `scripts/tuning/tune_recency.py` - the D-11 / D-16 pattern applied to the
 # one hyperparameter Phase 7 introduces. The grid is scored by log loss of the
 # headline stack over a **walk-forward** across the validation seasons only
 # (2019-2021, every fit on games completed before the target week), so the test

@@ -21,7 +21,7 @@ Three rules keep this auditable rather than a moving target:
 Both feature sets are scored, because the same grid need not win on 16 columns
 and on 29. Writes nothing. Run::
 
-    uv run python scripts/tune_models.py
+    uv run python scripts/tuning/tune_models.py
 """
 
 from __future__ import annotations

@@ -135,6 +135,18 @@ def test_performance_is_within_the_leakage_tripwire(client: TestClient) -> None:
     assert ensemble["accuracy"] <= body["accuracy_ceiling"]
 
 
+def test_market_agreement_rates_are_well_formed(client: TestClient) -> None:
+    """Each settled game counts on at most one side, and an empty side has no rate."""
+    body = client.get("/api/performance").json()
+    sides = body["market_agreement"]
+    assert sides["with_market"]["n"] + sides["against_market"]["n"] <= body["n_settled"]
+    for side in sides.values():
+        if side["n"]:
+            assert 0.0 <= side["hit_rate"] <= 1.0
+        else:
+            assert side["hit_rate"] is None
+
+
 def test_calibration_returns_points_or_empty(client: TestClient) -> None:
     body = client.get("/api/calibration?bins=5").json()
     assert body["bins"] == 5

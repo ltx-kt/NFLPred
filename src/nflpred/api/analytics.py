@@ -8,7 +8,7 @@ Every metric here comes from `nflpred.evaluate` - `accuracy`, `log_loss`, `brier
 season *bounds*, which advance as the walk-forward does, so a 2022-2025 backtest
 spans several suffixes that are all the *same recipe* - one moving train window.
 Pooling those for the ensemble readout is correct and is the number
-`scripts/phase7_pipeline.py` reports as the headline. What must not be pooled is
+`scripts/phases/phase7_pipeline.py` reports as the headline. What must not be pooled is
 two different *recipes*: the log also holds an unweighted (`half_life = None`)
 experiment over 2025 wk5-8. So the default view keeps only runs whose
 ``half_life`` matches the live config (:data:`nflpred.config.RECENCY_HALF_LIFE`);
@@ -24,14 +24,16 @@ import numpy as np
 import polars as pl
 from sklearn.calibration import calibration_curve
 
-from nflpred.config import RECENCY_HALF_LIFE
-from nflpred.evaluate import ACCURACY_CEILING, MARKET_LABEL, expand_ties, metrics_table
+from nflpred.api.queries import pick_correct
+from nflpred.config import PICK_THRESHOLD, RECENCY_HALF_LIFE
+from nflpred.evaluate import (
+    ACCURACY_CEILING,
+    MARKET_BAND,
+    MARKET_LABEL,
+    expand_ties,
+    metrics_table,
+)
 from nflpred.predlog import settled_predictions
-
-#: Vegas straight-up hit rate, for the "this is good, not suspicious" band on the
-#: performance chart. The de-vigged market line in the project's own results
-#: tables lands here (README).
-MARKET_BAND: tuple[float, float] = (0.66, 0.68)
 
 
 def _live_recipe_versions(connection: sqlite3.Connection) -> set[str]:
@@ -84,6 +86,37 @@ def _comparator_entries(frame: pl.DataFrame) -> list[tuple[str, np.ndarray, np.n
     ]
 
 
+def _market_agreement(frame: pl.DataFrame) -> dict:
+    """Hit rate of the ensemble's pick when it sides with the market, and against.
+
+    Same rule as the dashboard's "against market" badge: a game counts only when
+    the de-vigged line has a favourite - no quote, or a dead-even one, has no
+    side to agree or disagree with.
+    """
+    quoted = frame.filter(
+        pl.col("market_prob").is_not_null() & (pl.col("market_prob") != PICK_THRESHOLD)
+    )
+    market_pick = np.where(
+        quoted["market_prob"].to_numpy() > PICK_THRESHOLD,
+        quoted["home_team"].to_numpy(),
+        quoted["away_team"].to_numpy(),
+    )
+    agrees = quoted["pick"].to_numpy() == market_pick
+    correct = np.array(
+        [
+            pick_correct(pick, home, won)
+            for pick, home, won in quoted.select("pick", "home_team", "home_win").iter_rows()
+        ],
+        dtype=float,
+    )
+
+    def side(mask: np.ndarray) -> dict:
+        n = int(mask.sum())
+        return {"n": n, "hit_rate": float(correct[mask].mean()) if n else None}
+
+    return {"with_market": side(agrees), "against_market": side(~agrees)}
+
+
 def performance(connection: sqlite3.Connection, *, config: str | None, season: int | None) -> dict:
     """Ensemble vs Elo vs market over settled games, overall and per season-week."""
     frame, label = _scoped_frame(connection, config, season)
@@ -95,6 +128,10 @@ def performance(connection: sqlite3.Connection, *, config: str | None, season: i
         "by_week": [],
         "accuracy_ceiling": ACCURACY_CEILING,
         "market_band": list(MARKET_BAND),
+        "market_agreement": {
+            "with_market": {"n": 0, "hit_rate": None},
+            "against_market": {"n": 0, "hit_rate": None},
+        },
     }
     if frame.is_empty():
         return result
@@ -114,6 +151,7 @@ def performance(connection: sqlite3.Connection, *, config: str | None, season: i
     return result | {
         "overall": metrics_table(_comparator_entries(frame)).to_dicts(),
         "by_week": by_week,
+        "market_agreement": _market_agreement(frame),
     }
 
 

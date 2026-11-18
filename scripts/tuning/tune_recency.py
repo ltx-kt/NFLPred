@@ -25,7 +25,7 @@ finding is that recency weighting does not help here and the constant stays
 
 Writes nothing. Run::
 
-    uv run python scripts/tune_recency.py
+    uv run python scripts/tuning/tune_recency.py
 """
 
 from __future__ import annotations

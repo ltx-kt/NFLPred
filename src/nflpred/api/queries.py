@@ -13,7 +13,7 @@ import json
 import sqlite3
 from typing import Any
 
-from nflpred.config import LIVE_SEASON
+from nflpred.config import LIVE_SEASON, TIE
 from nflpred.predlog import config_suffixes, suffix_of
 
 #: One game row joined to its outcome. The WHERE clause is the only thing that
@@ -24,7 +24,7 @@ _GAME_SQL = (
 )
 
 
-def _pick_correct(pick: str, home_team: str, home_win: float | None) -> float | None:
+def pick_correct(pick: str, home_team: str, home_win: float | None) -> float | None:
     """1.0 hit, 0.0 miss, 0.5 tie; None when the outcome is unknown.
 
     ``pick`` is a team code and a home pick is ``pick == home_team``; an away
@@ -33,8 +33,8 @@ def _pick_correct(pick: str, home_team: str, home_win: float | None) -> float | 
     if home_win is None:
         return None
     picked_home = pick == home_team
-    if home_win == 0.5:
-        return 0.5
+    if home_win == TIE:
+        return TIE
     home_won = home_win == 1.0
     return 1.0 if picked_home == home_won else 0.0
 
@@ -116,7 +116,7 @@ def _outcome_of(row: sqlite3.Row) -> dict | None:
         "home_score": row["home_score"],
         "away_score": row["away_score"],
         "home_win": row["home_win"],
-        "pick_correct": _pick_correct(row["pick"], row["home_team"], row["home_win"]),
+        "pick_correct": pick_correct(row["pick"], row["home_team"], row["home_win"]),
     }
 
 

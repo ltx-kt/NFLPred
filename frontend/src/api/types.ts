@@ -154,6 +154,18 @@ export interface Performance {
   by_week: SeasonMetric[];
   accuracy_ceiling: number;
   market_band: [number, number];
+  market_agreement: MarketAgreement;
+}
+
+export interface MarketSide {
+  n: number;
+  hit_rate: number | null; // null when no settled game falls on this side
+}
+
+// The ensemble's hit rate when its pick sides with the market, and against it.
+export interface MarketAgreement {
+  with_market: MarketSide;
+  against_market: MarketSide;
 }
 
 export interface CalibrationPoint {

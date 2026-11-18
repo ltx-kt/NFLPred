@@ -1,8 +1,9 @@
+import { usePerformance } from "../api/client";
 import type { WeekKind } from "../api/types";
-import { resultWord } from "../lib/format";
+import { pct, resultWord } from "../lib/format";
 
 // "backtest" vs "live" - the single most important label on the whole dashboard.
-// 2022-2025 is the spent test split; a replay of it is not an independent result.
+// A backtest replays the spent test split; it is not an independent result.
 export function KindBadge({ kind }: { kind: WeekKind }) {
   const live = kind === "live";
   return (
@@ -46,13 +47,20 @@ export function ConfidenceBadge({ confidence }: { confidence: string }) {
 }
 
 // Flags a pick that differs from the market favorite. A caution flag, not a
-// trophy: historically these hit 42% vs 69% when the model agrees with the
-// market - see the tooltip.
+// trophy: historically these hit well below the picks that agree with the
+// market. The tooltip quotes both rates from the log.
 export function AgainstMarketBadge() {
+  const agreement = usePerformance().data?.market_agreement;
+  const against = agreement?.against_market.hit_rate;
+  const withMarket = agreement?.with_market.hit_rate;
+  const history =
+    against != null && withMarket != null
+      ? ` Historically, picks against the market have hit ${pct(against)} of the time, vs ${pct(withMarket)} when the model agrees with it.`
+      : "";
   return (
     <span
       className="inline-flex rounded px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset bg-flag/10 text-flag ring-flag/25"
-      title="This pick differs from the market favorite. Historically, picks against the market have hit 42% of the time, vs 69% when the model agrees with it."
+      title={`This pick differs from the market favorite.${history}`}
     >
       against market
     </span>

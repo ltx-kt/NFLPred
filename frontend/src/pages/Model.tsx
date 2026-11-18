@@ -5,7 +5,7 @@ import { AccuracyTrendChart } from "../components/charts/AccuracyTrendChart";
 import { CalibrationChart } from "../components/charts/CalibrationChart";
 import { ChartFrame } from "../components/charts/ChartFrame";
 import { MemberBrierChart } from "../components/charts/MemberBrierChart";
-import { pct, prob3, signedPct } from "../lib/format";
+import { pct, pctRange, prob3, signedPct } from "../lib/format";
 import { byModel } from "../lib/metrics";
 
 export function Model() {
@@ -70,7 +70,7 @@ export function Model() {
 
       <ChartFrame
         title="Running accuracy vs the market"
-        caption="Cumulative straight-up hit rate through the backtest. Shaded band is the ~66-68% range the market hits; the dashed red line is the 72% mark above which a time-split result is treated as a leak, not a model."
+        caption={`Cumulative straight-up hit rate through the backtest. Shaded band is the ~${pctRange(perf.data.market_band)} range the market hits; the dashed red line is the ${pct(perf.data.accuracy_ceiling)} mark above which a time-split result is treated as a leak, not a model.`}
       >
         <AccuracyTrendChart
           byWeek={perf.data.by_week}

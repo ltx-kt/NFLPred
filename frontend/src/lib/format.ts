@@ -3,6 +3,10 @@
 export const pct = (p: number | null | undefined, digits = 0): string =>
   p == null ? "-" : `${(p * 100).toFixed(digits)}%`;
 
+// A probability band as one range, e.g. [0.66, 0.68] -> "66-68%".
+export const pctRange = ([lo, hi]: [number, number]): string =>
+  `${Math.round(lo * 100)}-${pct(hi)}`;
+
 export const prob3 = (p: number | null | undefined): string =>
   p == null ? "-" : p.toFixed(3);
 

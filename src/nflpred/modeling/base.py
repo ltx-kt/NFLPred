@@ -40,7 +40,13 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier
 
-from nflpred.config import MODEL_PARAM_OVERRIDES, MODEL_PARAMS, N_JOBS, RANDOM_STATE
+from nflpred.config import (
+    LOGREG_MAX_ITER,
+    MODEL_PARAM_OVERRIDES,
+    MODEL_PARAMS,
+    N_JOBS,
+    RANDOM_STATE,
+)
 from nflpred.features.build import CORE_FEATURES, to_training_arrays
 
 #: Calibrating a frozen estimator with sample weights warns that the weights
@@ -56,7 +62,10 @@ def _logreg(params: Mapping[str, Any]) -> Pipeline:
     return Pipeline(
         [
             ("scale", StandardScaler()),
-            ("lr", LogisticRegression(max_iter=1000, random_state=RANDOM_STATE, **params)),
+            (
+                "lr",
+                LogisticRegression(max_iter=LOGREG_MAX_ITER, random_state=RANDOM_STATE, **params),
+            ),
         ]
     )
 
@@ -277,7 +286,7 @@ def fit_elo_platt(calib: pl.DataFrame, weight: str | None = None) -> LogisticReg
     """
     frame = calib.with_columns(elo_logit=pl.Series(elo_logit(elo_probability(calib))))
     x, y, w = to_training_arrays(frame, ["elo_logit"], weight=weight)
-    return LogisticRegression(max_iter=1000).fit(x, y, sample_weight=w)
+    return LogisticRegression(max_iter=LOGREG_MAX_ITER).fit(x, y, sample_weight=w)
 
 
 def elo_platt_probability(platt: LogisticRegression, probability: np.ndarray) -> np.ndarray:

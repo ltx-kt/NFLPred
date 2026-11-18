@@ -52,7 +52,7 @@ from sklearn.ensemble import StackingClassifier, VotingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import TimeSeriesSplit
 
-from nflpred.config import RANDOM_STATE
+from nflpred.config import LOGREG_MAX_ITER, PICK_THRESHOLD, RANDOM_STATE
 from nflpred.features.build import CORE_FEATURES, to_training_arrays
 from nflpred.modeling.base import (
     build_models,
@@ -99,10 +99,15 @@ CONFIDENCE_BANDS: Final[tuple[tuple[float, str], ...]] = (
 )
 
 
+def edge(probability: float) -> float:
+    """Distance of a home win probability from the pick threshold, either way."""
+    return abs(probability - PICK_THRESHOLD)
+
+
 def confidence(probability: float) -> str:
     """The a priori confidence band for one calibrated probability."""
-    edge = abs(float(probability) - 0.5)
-    return next(label for cut, label in CONFIDENCE_BANDS if edge < cut)
+    distance = edge(float(probability))
+    return next(label for cut, label in CONFIDENCE_BANDS if distance < cut)
 
 
 # --------------------------------------------------------------- the members
@@ -149,7 +154,7 @@ class PrefitMember(ClassifierMixin, BaseEstimator):
         return self.estimator.predict_proba(self._slice(X))
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        return (self.predict_proba(X)[:, 1] >= 0.5).astype(float)
+        return (self.predict_proba(X)[:, 1] >= PICK_THRESHOLD).astype(float)
 
 
 class ColumnSubset(ClassifierMixin, BaseEstimator):
@@ -188,7 +193,7 @@ class ColumnSubset(ClassifierMixin, BaseEstimator):
         return self.estimator_.predict_proba(self._slice(X))
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        return (self.predict_proba(X)[:, 1] >= 0.5).astype(float)
+        return (self.predict_proba(X)[:, 1] >= PICK_THRESHOLD).astype(float)
 
 
 class EloMember(ClassifierMixin, BaseEstimator):
@@ -227,7 +232,7 @@ class EloMember(ClassifierMixin, BaseEstimator):
         return np.column_stack([1.0 - probability, probability])
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        return (self.predict_proba(X)[:, 1] >= 0.5).astype(float)
+        return (self.predict_proba(X)[:, 1] >= PICK_THRESHOLD).astype(float)
 
 
 Member = tuple[str, ClassifierMixin]
@@ -260,7 +265,7 @@ def _meta_learner() -> LogisticRegression:
     """The stacking meta-learner. Linear on purpose - the spec's SHAP-combination
     step needs coefficients it can use as weights, and says to skip that step
     entirely if the meta-learner is nonlinear."""
-    return LogisticRegression(max_iter=1000, random_state=RANDOM_STATE)
+    return LogisticRegression(max_iter=LOGREG_MAX_ITER, random_state=RANDOM_STATE)
 
 
 def soft_vote(
@@ -382,7 +387,7 @@ class TimeSeriesStack(ClassifierMixin, BaseEstimator):
         return self.final_estimator_.predict_proba(self._meta_features(X))
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        return (self.predict_proba(X)[:, 1] >= 0.5).astype(float)
+        return (self.predict_proba(X)[:, 1] >= PICK_THRESHOLD).astype(float)
 
 
 def oof_stack(features: Sequence[str] = CORE_FEATURES, n_splits: int = 5) -> TimeSeriesStack:
@@ -446,7 +451,7 @@ def predict_records(
     per_member = member_probabilities(members, frame, features)
 
     def pick(probability: float, home: str, away: str) -> str:
-        return home if probability >= 0.5 else away
+        return home if probability >= PICK_THRESHOLD else away
 
     records: list[dict[str, Any]] = []
     for row, (game_id, home, away) in enumerate(

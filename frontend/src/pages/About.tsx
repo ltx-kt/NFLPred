@@ -1,4 +1,8 @@
+import { usePerformance } from "../api/client";
+import { pct, pctRange } from "../lib/format";
+
 export function About() {
+  const perf = usePerformance().data;
   return (
     <div className="prose-sm max-w-2xl space-y-5 text-sm leading-relaxed text-ink-2">
       <h1 className="text-xl font-semibold tracking-tight text-ink">How to read this</h1>
@@ -41,10 +45,11 @@ export function About() {
         <h2 className="font-semibold text-ink">Why ~65% is good</h2>
         <p>
           NFL games are close to coin flips. Picking the home team every week gets you into
-          the high 50s. The betting market, with the vig removed, lands around 66-68%
-          straight up - that is roughly the ceiling. This model sits just under it. Anything
-          above 72% on a proper time-ordered split is treated as a bug (a data leak that
-          reads as a triumph), not a breakthrough.
+          the high 50s. The betting market, with the vig removed, lands around{" "}
+          {perf ? pctRange(perf.market_band) : "two-thirds"} straight up - that is roughly the
+          ceiling. This model sits just under it. Anything above{" "}
+          {perf ? pct(perf.accuracy_ceiling) : "that"} on a proper time-ordered split is treated
+          as a bug (a data leak that reads as a triumph), not a breakthrough.
         </p>
       </section>
 

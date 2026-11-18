@@ -28,7 +28,7 @@ def performance(connection: Connection, config: Config = None, season: Season = 
     """Ensemble vs Elo vs de-vigged market over settled games.
 
     With no ``config`` the walk-forward suffixes are pooled into the one live
-    recipe (matching `scripts/phase7_pipeline.py`'s headline); a different
+    recipe (matching `scripts/phases/phase7_pipeline.py`'s headline); a different
     recipe such as the unweighted 2025 experiment is excluded. Pass a suffix to
     scope to a single fit.
     """

@@ -30,6 +30,8 @@ from sklearn.calibration import calibration_curve
 from sklearn.metrics import brier_score_loss
 from sklearn.metrics import log_loss as _sk_log_loss
 
+from nflpred.config import PICK_THRESHOLD, TIE
+
 #: Probabilities are clipped this far from {0, 1} before log loss, so a single
 #: confident miss cannot return infinity and hide every other number.
 _EPS: float = 1e-15
@@ -39,6 +41,11 @@ _EPS: float = 1e-15
 #: because two of them now enforce it, and a tripwire duplicated per phase is a
 #: tripwire that eventually differs per phase.
 ACCURACY_CEILING: float = 0.72
+
+#: Vegas straight-up hit rate, the "this is good, not suspicious" band under the
+#: ceiling. The de-vigged market line in the project's own results tables lands
+#: here (README).
+MARKET_BAND: tuple[float, float] = (0.66, 0.68)
 
 #: The de-vigged closing line's row label, wherever it is scored or plotted.
 #: One constant so a typo in a phase script cannot make the market row trip the
@@ -67,7 +74,7 @@ def expand_ties(
     y = np.asarray(y, dtype=float)
     base = np.ones_like(y) if weight is None else np.asarray(weight, dtype=float)
 
-    decided = y != 0.5
+    decided = y != TIE
     tied = ~decided
 
     index = np.concatenate([np.flatnonzero(decided), np.flatnonzero(tied), np.flatnonzero(tied)])
@@ -77,7 +84,7 @@ def expand_ties(
     return index, labels, weights
 
 
-def accuracy(y_true: np.ndarray, y_prob: np.ndarray, threshold: float = 0.5) -> float:
+def accuracy(y_true: np.ndarray, y_prob: np.ndarray, threshold: float = PICK_THRESHOLD) -> float:
     """Straight-up hit rate, with half credit for a tie."""
     index, labels, weights = expand_ties(y_true)
     predicted = (np.asarray(y_prob, dtype=float)[index] >= threshold).astype(float)

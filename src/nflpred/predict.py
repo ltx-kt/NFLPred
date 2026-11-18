@@ -73,6 +73,7 @@ from nflpred.config import (
     CALIB_WINDOW_SEASONS,
     LIVE_SEASON,
     MATRIX_START_SEASON,
+    PICK_THRESHOLD,
     POSTSEASON_TYPES,
     RECENCY_HALF_LIFE,
     WP_BAND,
@@ -588,7 +589,9 @@ def _report(args: argparse.Namespace) -> None:
 
     ensemble = scored.select(
         squared_error=(pl.col("home_win_prob") - pl.col("home_win")) ** 2,
-        correct=((pl.col("home_win_prob") >= 0.5).cast(pl.Float64) - pl.col("home_win")).abs(),
+        correct=(
+            (pl.col("home_win_prob") >= PICK_THRESHOLD).cast(pl.Float64) - pl.col("home_win")
+        ).abs(),
     )
     print(
         f"\nensemble over the same games: brier "

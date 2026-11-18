@@ -30,7 +30,7 @@ number is reported (constraint 3).
 
 Run::
 
-    uv run python scripts/phase7_pipeline.py
+    uv run python scripts/phases/phase7_pipeline.py
 """
 
 from __future__ import annotations
@@ -102,7 +102,7 @@ def main() -> None:
         f"matrix: {FEATURE_MATRIX_GT_PATH.name}   features: {len(ENSEMBLE_FEATURES)}   "
         f"calibration window: {CALIB_WINDOW_SEASONS} seasons (D-26)"
     )
-    print(f"frozen recency half-life: {frozen}   (scripts/tune_recency.py)\n")
+    print(f"frozen recency half-life: {frozen}   (scripts/tuning/tune_recency.py)\n")
 
     validation, val_frozen = _section(
         matrix, VAL_SEASONS, half_life, "1. VALIDATION", spends_the_budget=False

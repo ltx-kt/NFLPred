@@ -5,7 +5,7 @@ calibrated on 2016-2018 (D-5, D-13), all scored on 2019-2021 against the same
 comparators. This is a **measurement** phase: the deliverable is an honest table
 saying which estimators earn their place, not a tuned winner.
 
-Hyperparameters are frozen constants (D-16) chosen by `scripts/tune_models.py`
+Hyperparameters are frozen constants (D-16) chosen by `scripts/tuning/tune_models.py`
 on the training seasons alone. Nothing here searches anything - a checkpoint
 that tunes is a checkpoint that reports a selection artefact.
 
@@ -20,7 +20,7 @@ run rather than reporting (constraint 3).
 
 Run::
 
-    uv run python scripts/phase4_models.py
+    uv run python scripts/phases/phase4_models.py
 """
 
 from __future__ import annotations

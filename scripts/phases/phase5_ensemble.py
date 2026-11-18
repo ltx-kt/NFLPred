@@ -32,7 +32,7 @@ scored, never fitted. Test is not read.
 
 Run::
 
-    uv run python scripts/phase5_ensemble.py
+    uv run python scripts/phases/phase5_ensemble.py
 """
 
 from __future__ import annotations
@@ -48,6 +48,7 @@ from nflpred.config import (
     CALIB_SEASONS,
     FEATURE_MATRIX_GT_PATH,
     MODELS_DIR,
+    PICK_THRESHOLD,
     TRAIN_SEASONS,
     VAL_SEASONS,
 )
@@ -351,8 +352,8 @@ def _by_agreement(
     be right than a 4/6 one, agreement is not a confidence driver here and the
     explanation layer should not pretend otherwise.
     """
-    picks = np.vstack([(probabilities[name] >= 0.5) for name in probabilities])
-    ensemble_pick = ensemble_probability >= 0.5
+    picks = np.vstack([(probabilities[name] >= PICK_THRESHOLD) for name in probabilities])
+    ensemble_pick = ensemble_probability >= PICK_THRESHOLD
     agreed = (picks == ensemble_pick).sum(axis=0)
 
     rows = []
